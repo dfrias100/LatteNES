@@ -1,8 +1,10 @@
 package com.lattenes;
 
+import com.lattenes.EmulatorCore.EmulatorCore;
 
 public class LatteNes {
     public static void main( String[] args ) {
-        System.out.println( "No emulation yet!" );
+        EmulatorCore emulatorCore = new EmulatorCore();
+        emulatorCore.run();
     }
 }
