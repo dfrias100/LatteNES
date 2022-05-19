@@ -18,19 +18,61 @@
 
 package com.lattenes.EmulatorCore;
 
-import com.lattenes.Memory.Memory;
-import com.lattenes.EmulatorCore.Video;
+import java.util.Random;
+
+import com.lattenes.Memory.Memory;;
 
 public class EmulatorCore {
-    private Video video;
+    private EmulatorVideo video;
     private Memory memory;
 
     public EmulatorCore() {
-        video = new Video();
+        video = new EmulatorVideo();
         memory = new Memory();
     }
 
     public void run() {
-        video.run();
+        video.init();
+
+        // Dummy texture, just to show something
+        // In reality, we would pass the texture from the PPU
+        float[] framebuffer = new float[240 * 256 * 4];
+        Random random = new Random();
+
+        for (int i = 0; i < 240; i++) {
+            for (int j = 0; j < 256; j++) {
+                int idx = i * 256 * 4 + j * 4;
+                framebuffer[idx + 0] = random.nextFloat();
+                framebuffer[idx + 1] = random.nextFloat();
+                framebuffer[idx + 2] = random.nextFloat();
+                framebuffer[idx + 3] = 0.0f;
+            }
+        }
+
+        video.createTexture(framebuffer);
+
+        while (!video.shouldClose()) {
+            // The PPU would signal a draw update if the frame is ready,
+            // for now we have an idle loop
+            video.draw();
+
+            // Ideally, we would tick all of the components here, but
+            // they are yet to be implemented            
+            for (int i = 0; i < 240; i++) {
+                for (int j = 0; j < 256; j++) {
+                    int idx = i * 256 * 4 + j * 4;
+                    framebuffer[idx + 0] = random.nextFloat();
+                    framebuffer[idx + 1] = random.nextFloat();
+                    framebuffer[idx + 2] = random.nextFloat();
+                    framebuffer[idx + 3] = 0.0f;
+                }
+            }
+
+            // This would probably go in an if statement where the draw call would
+            // be, but for now we just update the random texture
+            video.updateTexture(framebuffer);
+        }
+        
+        video.cleanup();
     }
 }
