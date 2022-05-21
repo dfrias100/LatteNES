@@ -47,7 +47,12 @@ public class Memory {
         cpuMemory = new byte[RAM_SIZE];
     }
 
-    public void writeWord(short address, byte value, boolean cpuWrite) {
+    public void writeWord(int address, byte value) {
 
+    }
+
+    public int readWord(int address) {
+
+        return (0x00 /* This would be the return val */ & 0xFF);
     }
 }
