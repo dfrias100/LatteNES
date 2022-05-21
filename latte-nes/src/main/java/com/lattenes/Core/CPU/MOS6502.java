@@ -1,8 +1,8 @@
-package com.lattenes.CPU;
-
-import com.lattenes.Memory.Memory;
+package com.lattenes.Core.CPU;
 
 import java.util.ArrayList;
+
+import com.lattenes.Core.Memory.Memory;
 
 public class MOS6502 {
     private int PC;

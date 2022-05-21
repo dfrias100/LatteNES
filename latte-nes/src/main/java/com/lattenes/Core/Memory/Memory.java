@@ -16,7 +16,7 @@
  * this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.lattenes.Memory;
+package com.lattenes.Core.Memory;
 
 public class Memory {
     /* NES complete memory map

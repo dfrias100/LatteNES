@@ -1,4 +1,4 @@
-package com.lattenes.CPU;
+package com.lattenes.Core.CPU;
 
 public enum MOS6502Assembly {
     // The MOS 6502 has 255 opcodes, 56 official instructions, and 23 unofficial instructions

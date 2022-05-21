@@ -1,4 +1,4 @@
-package com.lattenes.CPU;
+package com.lattenes.Core.CPU;
 
 public enum MOS6502AddressMode {
     ACC, // Accumulator

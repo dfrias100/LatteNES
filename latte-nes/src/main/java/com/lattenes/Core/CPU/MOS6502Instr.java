@@ -1,4 +1,4 @@
-package com.lattenes.CPU;
+package com.lattenes.Core.CPU;
 
 import java.util.function.Supplier;
 

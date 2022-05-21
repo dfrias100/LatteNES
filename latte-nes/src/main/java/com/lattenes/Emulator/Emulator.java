@@ -20,7 +20,7 @@ package com.lattenes.Emulator;
 
 import java.util.Random;
 
-import com.lattenes.Memory.Memory;;
+import com.lattenes.Core.Memory.Memory;;
 
 public class Emulator {
     private EmulatorVideo video;
