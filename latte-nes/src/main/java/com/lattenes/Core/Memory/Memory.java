@@ -1,5 +1,5 @@
 /*
- * Nintendo Entertainment System (NES) Emulator written in Java
+ * LatteNES: Nintendo Entertainment System (NES) Emulator written in Java
  * Copyright (C) 2022 Daniel Frias
  *
  * This program is free software: you can redistribute it and/or modify it
