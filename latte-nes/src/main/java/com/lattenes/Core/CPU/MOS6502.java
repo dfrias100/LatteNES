@@ -77,7 +77,7 @@ public class MOS6502 {
 
         PC = 0x0000;
         SP = (byte) 0xFD;
-        processorStatusWord = 0x34;
+        processorStatusWord = (byte) (0x00 | (byte) ProcessorStatusWordFlag.U.value);
         A = 0x00;
         X = 0x00;
         Y = 0x00;
@@ -85,13 +85,88 @@ public class MOS6502 {
 
     public void clock() {
         // TODO: Implement
-    }
+    } 
 
     private int fetch() {
         if (opcodes.get(opcode).addressingMode != MOS6502AddressMode.IMP) {
             fetchedVal = memory.readWord(absoluteAddress);
         }
         return fetchedVal;
+    }
+
+    /*
+        Interrupts
+    */
+
+    // Maskable Interrupts
+    // Pushes the PC and Processor Status Word to the stack
+    // Reads the new PC from 0xFFFE
+    public void IRQ() {
+        if (!getFlag(ProcessorStatusWordFlag.I)) {
+            memory.writeWord(0x0100 + SP, (byte) (PC >> 8));
+            SP--;
+            SP &= 0xFF;
+            memory.writeWord(0x0100 + SP, (byte) (PC & 0xFF));
+            SP--;
+            SP &= 0xFF;
+
+            setFlag(ProcessorStatusWordFlag.B, false);
+            setFlag(ProcessorStatusWordFlag.U, true);
+            setFlag(ProcessorStatusWordFlag.I, true);
+            memory.writeWord(0x0100 + SP, processorStatusWord);
+            SP--;
+            SP &= 0xFF;
+
+            absoluteAddress = 0xFFFE;
+            PC = memory.readWord(absoluteAddress);
+            PC |= (memory.readWord(absoluteAddress + 1) << 8);
+
+            cycles = 7;
+        }
+    }
+
+    // Non-maskable Interrupts
+    // Same thing, but the interrupt is not masked, and the interrupt vector is
+    // at 0xFFFA
+    public void NMI() {
+        memory.writeWord(0x0100 + SP, (byte) (PC >> 8));
+        SP--;
+        SP &= 0xFF;
+        memory.writeWord(0x0100 + SP, (byte) (PC & 0xFF));
+        SP--;
+        SP &= 0xFF;
+
+        setFlag(ProcessorStatusWordFlag.B, false);
+        setFlag(ProcessorStatusWordFlag.U, true);
+        setFlag(ProcessorStatusWordFlag.I, true);
+        memory.writeWord(0x0100 + SP, processorStatusWord);
+        SP--;
+        SP &= 0xFF;
+
+        absoluteAddress = 0xFFFA;
+        PC = memory.readWord(absoluteAddress);
+        PC |= (memory.readWord(absoluteAddress + 1) << 8);
+
+        cycles = 8;
+    }
+
+    // Reset
+    // Reads the new PC from 0xFFFC and reset the CPU state to a fresh state
+    public void reset() {
+        PC = memory.readWord(0xFFFC);
+        PC |= (memory.readWord(0xFFFD) << 8);
+
+        SP = (byte) 0xFD;
+        processorStatusWord = (byte) (0x00 | (byte) ProcessorStatusWordFlag.U.value);
+        A = 0x00;
+        X = 0x00;
+        Y = 0x00;
+
+        absoluteAddress = 0x0000;
+        relativeAddress = 0x0000;
+        fetchedVal = 0;
+
+        cycles = 8;
     }
 
     /*       
