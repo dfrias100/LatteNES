@@ -51,8 +51,8 @@ public class EmulatorVideo {
     private FloatBuffer pixels;
 
     // Does nothing right now, but could be useful later
-    private int windowWidth = 640;
-    private int windowHeight = 480;
+    private int windowWidth = 800;
+    private int windowHeight = 750;
 
     // Size of the texture we will generate from OpenGL
     private final int NES_WIDTH = 256;

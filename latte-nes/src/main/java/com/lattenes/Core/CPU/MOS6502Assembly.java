@@ -57,7 +57,7 @@ public enum MOS6502Assembly {
     LDX("LDX", MOS6502Assembly.Official),
     LDY("LDY", MOS6502Assembly.Official),
     LSR("LSR", MOS6502Assembly.Official),
-    NOP("NOP", MOS6502Assembly.Official),	
+    NOP("NOP", MOS6502Assembly.Official),
     ORA("ORA", MOS6502Assembly.Official),
     PHA("PHA", MOS6502Assembly.Official),
     PHP("PHP", MOS6502Assembly.Official),
@@ -78,7 +78,7 @@ public enum MOS6502Assembly {
     TAY("TAY", MOS6502Assembly.Official),
     TSX("TSX", MOS6502Assembly.Official),
     TXA("TXA", MOS6502Assembly.Official),
-    TXS("TXS", MOS6502Assembly.Official),   
+    TXS("TXS", MOS6502Assembly.Official),
     TYA("TYA", MOS6502Assembly.Official),
 
     // For now all unofficial instructions are considered the same
