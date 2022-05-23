@@ -20,20 +20,23 @@ package com.lattenes.Emulator;
 
 import java.util.Random;
 
-import com.lattenes.Core.Memory.Memory;;
+import com.lattenes.Core.Memory.Memory;
+import com.lattenes.Core.CPU.MOS6502;
 
 public class Emulator {
     private EmulatorVideo video;
     private Memory memory;
+    private MOS6502 cpu;
 
     public Emulator() {
         video = new EmulatorVideo();
         memory = new Memory();
+        cpu = new MOS6502(memory);
     }
 
     public void run() {
         video.init();
-
+        
         // Dummy texture, just to show something
         // In reality, we would pass the texture from the PPU
         float[] framebuffer = new float[240 * 256 * 4];

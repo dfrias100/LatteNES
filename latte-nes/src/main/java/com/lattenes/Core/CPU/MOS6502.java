@@ -81,6 +81,278 @@ public class MOS6502 {
         A = 0x00;
         X = 0x00;
         Y = 0x00;
+
+        opcodes.add(new MOS6502Instr(this, 0x00, 7, MOS6502AddressMode.IMP, MOS6502Assembly.BRK));
+        opcodes.add(new MOS6502Instr(this, 0x01, 6, MOS6502AddressMode.IZX, MOS6502Assembly.ORA));
+        opcodes.add(new MOS6502Instr(this, 0x02, 2, MOS6502AddressMode.IMP, MOS6502Assembly.XXX));
+        opcodes.add(new MOS6502Instr(this, 0x03, 2, MOS6502AddressMode.IMP, MOS6502Assembly.XXX));
+        opcodes.add(new MOS6502Instr(this, 0x04, 2, MOS6502AddressMode.IMP, MOS6502Assembly.XXX));
+        opcodes.add(new MOS6502Instr(this, 0x05, 3, MOS6502AddressMode.ZPG, MOS6502Assembly.ORA));
+        opcodes.add(new MOS6502Instr(this, 0x06, 5, MOS6502AddressMode.ZPG, MOS6502Assembly.ASL));
+        opcodes.add(new MOS6502Instr(this, 0x07, 2, MOS6502AddressMode.IMP, MOS6502Assembly.XXX));
+        opcodes.add(new MOS6502Instr(this, 0x08, 3, MOS6502AddressMode.IMP, MOS6502Assembly.PHP));
+        opcodes.add(new MOS6502Instr(this, 0x09, 2, MOS6502AddressMode.IMM, MOS6502Assembly.ORA));
+        opcodes.add(new MOS6502Instr(this, 0x0A, 2, MOS6502AddressMode.ACC, MOS6502Assembly.ASL));
+        opcodes.add(new MOS6502Instr(this, 0x0B, 2, MOS6502AddressMode.IMP, MOS6502Assembly.XXX));
+        opcodes.add(new MOS6502Instr(this, 0x0C, 2, MOS6502AddressMode.IMP, MOS6502Assembly.XXX));
+        opcodes.add(new MOS6502Instr(this, 0x0D, 4, MOS6502AddressMode.ABS, MOS6502Assembly.ORA));
+        opcodes.add(new MOS6502Instr(this, 0x0E, 6, MOS6502AddressMode.ABS, MOS6502Assembly.ASL));
+        opcodes.add(new MOS6502Instr(this, 0x0F, 2, MOS6502AddressMode.IMP, MOS6502Assembly.XXX));
+
+        opcodes.add(new MOS6502Instr(this, 0x10, 2, MOS6502AddressMode.REL, MOS6502Assembly.BPL));
+        opcodes.add(new MOS6502Instr(this, 0x11, 5, MOS6502AddressMode.IZY, MOS6502Assembly.ORA));
+        opcodes.add(new MOS6502Instr(this, 0x12, 2, MOS6502AddressMode.IMP, MOS6502Assembly.XXX));
+        opcodes.add(new MOS6502Instr(this, 0x13, 2, MOS6502AddressMode.IMP, MOS6502Assembly.XXX));
+        opcodes.add(new MOS6502Instr(this, 0x14, 2, MOS6502AddressMode.IMP, MOS6502Assembly.XXX));
+        opcodes.add(new MOS6502Instr(this, 0x15, 4, MOS6502AddressMode.ZPX, MOS6502Assembly.ORA));
+        opcodes.add(new MOS6502Instr(this, 0x16, 6, MOS6502AddressMode.ZPX, MOS6502Assembly.ASL));
+        opcodes.add(new MOS6502Instr(this, 0x17, 2, MOS6502AddressMode.IMP, MOS6502Assembly.XXX));
+        opcodes.add(new MOS6502Instr(this, 0x18, 2, MOS6502AddressMode.IMP, MOS6502Assembly.CLC));
+        opcodes.add(new MOS6502Instr(this, 0x19, 4, MOS6502AddressMode.ABY, MOS6502Assembly.ORA));
+        opcodes.add(new MOS6502Instr(this, 0x1A, 2, MOS6502AddressMode.IMP, MOS6502Assembly.XXX));
+        opcodes.add(new MOS6502Instr(this, 0x1B, 2, MOS6502AddressMode.IMP, MOS6502Assembly.XXX));
+        opcodes.add(new MOS6502Instr(this, 0x1C, 2, MOS6502AddressMode.IMP, MOS6502Assembly.XXX));
+        opcodes.add(new MOS6502Instr(this, 0x1D, 4, MOS6502AddressMode.ABX, MOS6502Assembly.ORA));
+        opcodes.add(new MOS6502Instr(this, 0x1E, 7, MOS6502AddressMode.ABX, MOS6502Assembly.ASL));
+        opcodes.add(new MOS6502Instr(this, 0x1F, 2, MOS6502AddressMode.IMP, MOS6502Assembly.XXX));
+
+        opcodes.add(new MOS6502Instr(this, 0x20, 6, MOS6502AddressMode.ABS, MOS6502Assembly.JSR));
+        opcodes.add(new MOS6502Instr(this, 0x21, 6, MOS6502AddressMode.IZX, MOS6502Assembly.AND));
+        opcodes.add(new MOS6502Instr(this, 0x22, 2, MOS6502AddressMode.IMP, MOS6502Assembly.XXX));
+        opcodes.add(new MOS6502Instr(this, 0x23, 2, MOS6502AddressMode.IMP, MOS6502Assembly.XXX));
+        opcodes.add(new MOS6502Instr(this, 0x24, 3, MOS6502AddressMode.ZPG, MOS6502Assembly.BIT));
+        opcodes.add(new MOS6502Instr(this, 0x25, 3, MOS6502AddressMode.ZPG, MOS6502Assembly.AND));
+        opcodes.add(new MOS6502Instr(this, 0x26, 5, MOS6502AddressMode.ZPG, MOS6502Assembly.ROL));
+        opcodes.add(new MOS6502Instr(this, 0x27, 2, MOS6502AddressMode.IMP, MOS6502Assembly.XXX));
+        opcodes.add(new MOS6502Instr(this, 0x28, 4, MOS6502AddressMode.IMP, MOS6502Assembly.PLP));
+        opcodes.add(new MOS6502Instr(this, 0x29, 2, MOS6502AddressMode.IMM, MOS6502Assembly.AND));
+        opcodes.add(new MOS6502Instr(this, 0x2A, 2, MOS6502AddressMode.ACC, MOS6502Assembly.ROL));
+        opcodes.add(new MOS6502Instr(this, 0x2B, 2, MOS6502AddressMode.IMP, MOS6502Assembly.XXX));
+        opcodes.add(new MOS6502Instr(this, 0x2C, 4, MOS6502AddressMode.ABS, MOS6502Assembly.BIT));
+        opcodes.add(new MOS6502Instr(this, 0x2D, 4, MOS6502AddressMode.ABS, MOS6502Assembly.AND));
+        opcodes.add(new MOS6502Instr(this, 0x2E, 6, MOS6502AddressMode.ABS, MOS6502Assembly.ROL));
+        opcodes.add(new MOS6502Instr(this, 0x2F, 2, MOS6502AddressMode.IMP, MOS6502Assembly.XXX));
+
+        opcodes.add(new MOS6502Instr(this, 0x30, 2, MOS6502AddressMode.REL, MOS6502Assembly.BMI));
+        opcodes.add(new MOS6502Instr(this, 0x31, 5, MOS6502AddressMode.IZY, MOS6502Assembly.AND));
+        opcodes.add(new MOS6502Instr(this, 0x32, 2, MOS6502AddressMode.IMP, MOS6502Assembly.XXX));
+        opcodes.add(new MOS6502Instr(this, 0x33, 2, MOS6502AddressMode.IMP, MOS6502Assembly.XXX));
+        opcodes.add(new MOS6502Instr(this, 0x34, 2, MOS6502AddressMode.IMP, MOS6502Assembly.XXX));
+        opcodes.add(new MOS6502Instr(this, 0x35, 4, MOS6502AddressMode.ZPX, MOS6502Assembly.AND));
+        opcodes.add(new MOS6502Instr(this, 0x36, 6, MOS6502AddressMode.ZPX, MOS6502Assembly.ROL));
+        opcodes.add(new MOS6502Instr(this, 0x37, 2, MOS6502AddressMode.IMP, MOS6502Assembly.XXX));
+        opcodes.add(new MOS6502Instr(this, 0x38, 2, MOS6502AddressMode.IMP, MOS6502Assembly.SEC));
+        opcodes.add(new MOS6502Instr(this, 0x39, 4, MOS6502AddressMode.ABY, MOS6502Assembly.AND));
+        opcodes.add(new MOS6502Instr(this, 0x3A, 2, MOS6502AddressMode.IMP, MOS6502Assembly.XXX));
+        opcodes.add(new MOS6502Instr(this, 0x3B, 2, MOS6502AddressMode.IMP, MOS6502Assembly.XXX));
+        opcodes.add(new MOS6502Instr(this, 0x3C, 2, MOS6502AddressMode.IMP, MOS6502Assembly.XXX));
+        opcodes.add(new MOS6502Instr(this, 0x3D, 4, MOS6502AddressMode.ABX, MOS6502Assembly.AND));
+        opcodes.add(new MOS6502Instr(this, 0x3E, 7, MOS6502AddressMode.ABX, MOS6502Assembly.ROL));
+        opcodes.add(new MOS6502Instr(this, 0x3F, 2, MOS6502AddressMode.IMP, MOS6502Assembly.XXX));
+
+        opcodes.add(new MOS6502Instr(this, 0x40, 6, MOS6502AddressMode.IMP, MOS6502Assembly.RTI));
+        opcodes.add(new MOS6502Instr(this, 0x41, 6, MOS6502AddressMode.IZX, MOS6502Assembly.EOR));
+        opcodes.add(new MOS6502Instr(this, 0x42, 2, MOS6502AddressMode.IMP, MOS6502Assembly.XXX));
+        opcodes.add(new MOS6502Instr(this, 0x43, 2, MOS6502AddressMode.IMP, MOS6502Assembly.XXX));    
+        opcodes.add(new MOS6502Instr(this, 0x44, 2, MOS6502AddressMode.IMP, MOS6502Assembly.XXX));
+        opcodes.add(new MOS6502Instr(this, 0x45, 3, MOS6502AddressMode.ZPG, MOS6502Assembly.EOR));
+        opcodes.add(new MOS6502Instr(this, 0x46, 5, MOS6502AddressMode.ZPG, MOS6502Assembly.LSR));
+        opcodes.add(new MOS6502Instr(this, 0x47, 2, MOS6502AddressMode.IMP, MOS6502Assembly.XXX));
+        opcodes.add(new MOS6502Instr(this, 0x48, 3, MOS6502AddressMode.IMP, MOS6502Assembly.PHA));
+        opcodes.add(new MOS6502Instr(this, 0x49, 2, MOS6502AddressMode.IMM, MOS6502Assembly.EOR));
+        opcodes.add(new MOS6502Instr(this, 0x4A, 2, MOS6502AddressMode.ACC, MOS6502Assembly.LSR));
+        opcodes.add(new MOS6502Instr(this, 0x4B, 2, MOS6502AddressMode.IMP, MOS6502Assembly.XXX));
+        opcodes.add(new MOS6502Instr(this, 0x4C, 3, MOS6502AddressMode.ABS, MOS6502Assembly.JMP));
+        opcodes.add(new MOS6502Instr(this, 0x4D, 4, MOS6502AddressMode.ABS, MOS6502Assembly.EOR));
+        opcodes.add(new MOS6502Instr(this, 0x4E, 6, MOS6502AddressMode.ABS, MOS6502Assembly.LSR));
+        opcodes.add(new MOS6502Instr(this, 0x4F, 2, MOS6502AddressMode.IMP, MOS6502Assembly.XXX));
+
+        opcodes.add(new MOS6502Instr(this, 0x50, 2, MOS6502AddressMode.REL, MOS6502Assembly.BVC));
+        opcodes.add(new MOS6502Instr(this, 0x51, 5, MOS6502AddressMode.IZY, MOS6502Assembly.EOR));
+        opcodes.add(new MOS6502Instr(this, 0x52, 2, MOS6502AddressMode.IMP, MOS6502Assembly.XXX));
+        opcodes.add(new MOS6502Instr(this, 0x53, 2, MOS6502AddressMode.IMP, MOS6502Assembly.XXX));
+        opcodes.add(new MOS6502Instr(this, 0x54, 2, MOS6502AddressMode.IMP, MOS6502Assembly.XXX));
+        opcodes.add(new MOS6502Instr(this, 0x55, 4, MOS6502AddressMode.ZPX, MOS6502Assembly.EOR));
+        opcodes.add(new MOS6502Instr(this, 0x56, 6, MOS6502AddressMode.ZPX, MOS6502Assembly.LSR));
+        opcodes.add(new MOS6502Instr(this, 0x57, 2, MOS6502AddressMode.IMP, MOS6502Assembly.XXX));
+        opcodes.add(new MOS6502Instr(this, 0x58, 2, MOS6502AddressMode.IMP, MOS6502Assembly.CLI));
+        opcodes.add(new MOS6502Instr(this, 0x59, 4, MOS6502AddressMode.ABY, MOS6502Assembly.EOR));
+        opcodes.add(new MOS6502Instr(this, 0x5A, 2, MOS6502AddressMode.IMP, MOS6502Assembly.XXX));
+        opcodes.add(new MOS6502Instr(this, 0x5B, 2, MOS6502AddressMode.IMP, MOS6502Assembly.XXX));
+        opcodes.add(new MOS6502Instr(this, 0x5C, 2, MOS6502AddressMode.IMP, MOS6502Assembly.XXX));
+        opcodes.add(new MOS6502Instr(this, 0x5D, 4, MOS6502AddressMode.ABX, MOS6502Assembly.EOR));
+        opcodes.add(new MOS6502Instr(this, 0x5E, 7, MOS6502AddressMode.ABX, MOS6502Assembly.LSR));
+        opcodes.add(new MOS6502Instr(this, 0x5F, 2, MOS6502AddressMode.IMP, MOS6502Assembly.XXX));
+
+        opcodes.add(new MOS6502Instr(this, 0x60, 6, MOS6502AddressMode.IMP, MOS6502Assembly.RTS));
+        opcodes.add(new MOS6502Instr(this, 0x61, 6, MOS6502AddressMode.IZX, MOS6502Assembly.ADC));
+        opcodes.add(new MOS6502Instr(this, 0x62, 2, MOS6502AddressMode.IMP, MOS6502Assembly.XXX));
+        opcodes.add(new MOS6502Instr(this, 0x63, 2, MOS6502AddressMode.IMP, MOS6502Assembly.XXX));
+        opcodes.add(new MOS6502Instr(this, 0x64, 2, MOS6502AddressMode.IMP, MOS6502Assembly.XXX));
+        opcodes.add(new MOS6502Instr(this, 0x65, 3, MOS6502AddressMode.ZPG, MOS6502Assembly.ADC));
+        opcodes.add(new MOS6502Instr(this, 0x66, 5, MOS6502AddressMode.ZPG, MOS6502Assembly.ROR));
+        opcodes.add(new MOS6502Instr(this, 0x67, 2, MOS6502AddressMode.IMP, MOS6502Assembly.XXX));
+        opcodes.add(new MOS6502Instr(this, 0x68, 4, MOS6502AddressMode.IMP, MOS6502Assembly.PLA));
+        opcodes.add(new MOS6502Instr(this, 0x69, 2, MOS6502AddressMode.IMM, MOS6502Assembly.ADC));
+        opcodes.add(new MOS6502Instr(this, 0x6A, 2, MOS6502AddressMode.ACC, MOS6502Assembly.ROR));
+        opcodes.add(new MOS6502Instr(this, 0x6B, 2, MOS6502AddressMode.IMP, MOS6502Assembly.XXX));  
+        opcodes.add(new MOS6502Instr(this, 0x6C, 5, MOS6502AddressMode.IND, MOS6502Assembly.JMP));
+        opcodes.add(new MOS6502Instr(this, 0x6D, 4, MOS6502AddressMode.ABS, MOS6502Assembly.ADC));
+        opcodes.add(new MOS6502Instr(this, 0x6E, 6, MOS6502AddressMode.ABS, MOS6502Assembly.ROR));
+        opcodes.add(new MOS6502Instr(this, 0x6F, 2, MOS6502AddressMode.IMP, MOS6502Assembly.XXX));
+    
+        opcodes.add(new MOS6502Instr(this, 0x70, 2, MOS6502AddressMode.REL, MOS6502Assembly.BVS));
+        opcodes.add(new MOS6502Instr(this, 0x71, 5, MOS6502AddressMode.IZY, MOS6502Assembly.ADC));
+        opcodes.add(new MOS6502Instr(this, 0x72, 2, MOS6502AddressMode.IMP, MOS6502Assembly.XXX));
+        opcodes.add(new MOS6502Instr(this, 0x73, 2, MOS6502AddressMode.IMP, MOS6502Assembly.XXX));
+        opcodes.add(new MOS6502Instr(this, 0x74, 2, MOS6502AddressMode.IMP, MOS6502Assembly.XXX));
+        opcodes.add(new MOS6502Instr(this, 0x75, 4, MOS6502AddressMode.ZPX, MOS6502Assembly.ADC));
+        opcodes.add(new MOS6502Instr(this, 0x76, 6, MOS6502AddressMode.ZPX, MOS6502Assembly.ROR));
+        opcodes.add(new MOS6502Instr(this, 0x77, 2, MOS6502AddressMode.IMP, MOS6502Assembly.XXX));
+        opcodes.add(new MOS6502Instr(this, 0x78, 2, MOS6502AddressMode.IMP, MOS6502Assembly.SEI));
+        opcodes.add(new MOS6502Instr(this, 0x79, 4, MOS6502AddressMode.ABY, MOS6502Assembly.ADC));
+        opcodes.add(new MOS6502Instr(this, 0x7A, 2, MOS6502AddressMode.IMP, MOS6502Assembly.XXX));
+        opcodes.add(new MOS6502Instr(this, 0x7B, 2, MOS6502AddressMode.IMP, MOS6502Assembly.XXX));
+        opcodes.add(new MOS6502Instr(this, 0x7C, 2, MOS6502AddressMode.IMP, MOS6502Assembly.XXX));
+        opcodes.add(new MOS6502Instr(this, 0x7D, 4, MOS6502AddressMode.ABX, MOS6502Assembly.ADC));
+        opcodes.add(new MOS6502Instr(this, 0x7E, 7, MOS6502AddressMode.ABX, MOS6502Assembly.ROR));
+        opcodes.add(new MOS6502Instr(this, 0x7F, 2, MOS6502AddressMode.IMP, MOS6502Assembly.XXX));
+
+        opcodes.add(new MOS6502Instr(this, 0x80, 2, MOS6502AddressMode.IMP, MOS6502Assembly.XXX));
+        opcodes.add(new MOS6502Instr(this, 0x81, 6, MOS6502AddressMode.IZX, MOS6502Assembly.STA));
+        opcodes.add(new MOS6502Instr(this, 0x82, 2, MOS6502AddressMode.IMP, MOS6502Assembly.XXX));
+        opcodes.add(new MOS6502Instr(this, 0x83, 2, MOS6502AddressMode.IMP, MOS6502Assembly.XXX));
+        opcodes.add(new MOS6502Instr(this, 0x84, 3, MOS6502AddressMode.ZPG, MOS6502Assembly.STY));
+        opcodes.add(new MOS6502Instr(this, 0x85, 3, MOS6502AddressMode.ZPG, MOS6502Assembly.STA));
+        opcodes.add(new MOS6502Instr(this, 0x86, 3, MOS6502AddressMode.ZPG, MOS6502Assembly.STX));
+        opcodes.add(new MOS6502Instr(this, 0x87, 2, MOS6502AddressMode.IMP, MOS6502Assembly.XXX));
+        opcodes.add(new MOS6502Instr(this, 0x88, 2, MOS6502AddressMode.IMP, MOS6502Assembly.DEY));
+        opcodes.add(new MOS6502Instr(this, 0x89, 2, MOS6502AddressMode.IMP, MOS6502Assembly.XXX));
+        opcodes.add(new MOS6502Instr(this, 0x8A, 2, MOS6502AddressMode.IMP, MOS6502Assembly.TXA));
+        opcodes.add(new MOS6502Instr(this, 0x8B, 2, MOS6502AddressMode.IMP, MOS6502Assembly.XXX));
+        opcodes.add(new MOS6502Instr(this, 0x8C, 4, MOS6502AddressMode.ABS, MOS6502Assembly.STY));
+        opcodes.add(new MOS6502Instr(this, 0x8D, 4, MOS6502AddressMode.ABS, MOS6502Assembly.STA));
+        opcodes.add(new MOS6502Instr(this, 0x8E, 4, MOS6502AddressMode.ABS, MOS6502Assembly.STX));
+        opcodes.add(new MOS6502Instr(this, 0x8F, 2, MOS6502AddressMode.IMP, MOS6502Assembly.XXX));
+
+        opcodes.add(new MOS6502Instr(this, 0x90, 2, MOS6502AddressMode.REL, MOS6502Assembly.BCC));
+        opcodes.add(new MOS6502Instr(this, 0x91, 6, MOS6502AddressMode.IZY, MOS6502Assembly.STA));
+        opcodes.add(new MOS6502Instr(this, 0x92, 2, MOS6502AddressMode.IMP, MOS6502Assembly.XXX));
+        opcodes.add(new MOS6502Instr(this, 0x93, 2, MOS6502AddressMode.IMP, MOS6502Assembly.XXX));
+        opcodes.add(new MOS6502Instr(this, 0x94, 4, MOS6502AddressMode.ZPX, MOS6502Assembly.STY));
+        opcodes.add(new MOS6502Instr(this, 0x95, 4, MOS6502AddressMode.ZPX, MOS6502Assembly.STA));
+        opcodes.add(new MOS6502Instr(this, 0x96, 4, MOS6502AddressMode.ZPY, MOS6502Assembly.STX));
+        opcodes.add(new MOS6502Instr(this, 0x97, 2, MOS6502AddressMode.IMP, MOS6502Assembly.XXX));
+        opcodes.add(new MOS6502Instr(this, 0x98, 2, MOS6502AddressMode.IMP, MOS6502Assembly.TYA));
+        opcodes.add(new MOS6502Instr(this, 0x99, 5, MOS6502AddressMode.ABY, MOS6502Assembly.STA));
+        opcodes.add(new MOS6502Instr(this, 0x9A, 2, MOS6502AddressMode.IMP, MOS6502Assembly.TXS));
+        opcodes.add(new MOS6502Instr(this, 0x9B, 2, MOS6502AddressMode.IMP, MOS6502Assembly.XXX));
+        opcodes.add(new MOS6502Instr(this, 0x9C, 2, MOS6502AddressMode.IMP, MOS6502Assembly.XXX));
+        opcodes.add(new MOS6502Instr(this, 0x9D, 5, MOS6502AddressMode.ABX, MOS6502Assembly.STA));
+        opcodes.add(new MOS6502Instr(this, 0x9E, 2, MOS6502AddressMode.IMP, MOS6502Assembly.XXX));
+        opcodes.add(new MOS6502Instr(this, 0x9F, 2, MOS6502AddressMode.IMP, MOS6502Assembly.XXX));
+
+        opcodes.add(new MOS6502Instr(this, 0xA0, 2, MOS6502AddressMode.IMM, MOS6502Assembly.LDY));
+        opcodes.add(new MOS6502Instr(this, 0xA1, 6, MOS6502AddressMode.IZX, MOS6502Assembly.LDA));
+        opcodes.add(new MOS6502Instr(this, 0xA2, 2, MOS6502AddressMode.IMM, MOS6502Assembly.LDX));
+        opcodes.add(new MOS6502Instr(this, 0xA3, 2, MOS6502AddressMode.IMP, MOS6502Assembly.XXX));
+        opcodes.add(new MOS6502Instr(this, 0xA4, 3, MOS6502AddressMode.ZPG, MOS6502Assembly.LDY));
+        opcodes.add(new MOS6502Instr(this, 0xA5, 3, MOS6502AddressMode.ZPG, MOS6502Assembly.LDA));
+        opcodes.add(new MOS6502Instr(this, 0xA6, 3, MOS6502AddressMode.ZPG, MOS6502Assembly.LDX));
+        opcodes.add(new MOS6502Instr(this, 0xA7, 2, MOS6502AddressMode.IMP, MOS6502Assembly.XXX));
+        opcodes.add(new MOS6502Instr(this, 0xA8, 2, MOS6502AddressMode.IMP, MOS6502Assembly.TAY));
+        opcodes.add(new MOS6502Instr(this, 0xA9, 2, MOS6502AddressMode.IMM, MOS6502Assembly.LDA));
+        opcodes.add(new MOS6502Instr(this, 0xAA, 2, MOS6502AddressMode.IMP, MOS6502Assembly.TAX));
+        opcodes.add(new MOS6502Instr(this, 0xAB, 2, MOS6502AddressMode.IMP, MOS6502Assembly.XXX));
+        opcodes.add(new MOS6502Instr(this, 0xAC, 4, MOS6502AddressMode.ABS, MOS6502Assembly.LDY));
+        opcodes.add(new MOS6502Instr(this, 0xAD, 4, MOS6502AddressMode.ABS, MOS6502Assembly.LDA));
+        opcodes.add(new MOS6502Instr(this, 0xAE, 4, MOS6502AddressMode.ABS, MOS6502Assembly.LDX));
+        opcodes.add(new MOS6502Instr(this, 0xAF, 2, MOS6502AddressMode.IMP, MOS6502Assembly.XXX));
+
+        opcodes.add(new MOS6502Instr(this, 0xB0, 2, MOS6502AddressMode.REL, MOS6502Assembly.BCS));
+        opcodes.add(new MOS6502Instr(this, 0xB1, 5, MOS6502AddressMode.IZY, MOS6502Assembly.LDA));
+        opcodes.add(new MOS6502Instr(this, 0xB2, 2, MOS6502AddressMode.IMP, MOS6502Assembly.XXX));
+        opcodes.add(new MOS6502Instr(this, 0xB3, 2, MOS6502AddressMode.IMP, MOS6502Assembly.XXX));
+        opcodes.add(new MOS6502Instr(this, 0xB4, 4, MOS6502AddressMode.ZPX, MOS6502Assembly.LDY));
+        opcodes.add(new MOS6502Instr(this, 0xB5, 4, MOS6502AddressMode.ZPX, MOS6502Assembly.LDA));
+        opcodes.add(new MOS6502Instr(this, 0xB6, 4, MOS6502AddressMode.ZPY, MOS6502Assembly.LDX));
+        opcodes.add(new MOS6502Instr(this, 0xB7, 2, MOS6502AddressMode.IMP, MOS6502Assembly.XXX));
+        opcodes.add(new MOS6502Instr(this, 0xB8, 2, MOS6502AddressMode.IMP, MOS6502Assembly.CLV));
+        opcodes.add(new MOS6502Instr(this, 0xB9, 4, MOS6502AddressMode.ABY, MOS6502Assembly.LDA));
+        opcodes.add(new MOS6502Instr(this, 0xBA, 2, MOS6502AddressMode.IMP, MOS6502Assembly.TSX));
+        opcodes.add(new MOS6502Instr(this, 0xBB, 2, MOS6502AddressMode.IMP, MOS6502Assembly.XXX));
+        opcodes.add(new MOS6502Instr(this, 0xBC, 4, MOS6502AddressMode.ABX, MOS6502Assembly.LDY));
+        opcodes.add(new MOS6502Instr(this, 0xBD, 4, MOS6502AddressMode.ABX, MOS6502Assembly.LDA));
+        opcodes.add(new MOS6502Instr(this, 0xBE, 4, MOS6502AddressMode.ABY, MOS6502Assembly.LDX));
+        opcodes.add(new MOS6502Instr(this, 0xBF, 2, MOS6502AddressMode.IMP, MOS6502Assembly.XXX));
+
+        opcodes.add(new MOS6502Instr(this, 0xC0, 2, MOS6502AddressMode.IMM, MOS6502Assembly.CPY));
+        opcodes.add(new MOS6502Instr(this, 0xC1, 6, MOS6502AddressMode.IZX, MOS6502Assembly.CMP));
+        opcodes.add(new MOS6502Instr(this, 0xC2, 2, MOS6502AddressMode.IMP, MOS6502Assembly.XXX));
+        opcodes.add(new MOS6502Instr(this, 0xC3, 2, MOS6502AddressMode.IMP, MOS6502Assembly.XXX));
+        opcodes.add(new MOS6502Instr(this, 0xC4, 3, MOS6502AddressMode.ZPG, MOS6502Assembly.CPY));
+        opcodes.add(new MOS6502Instr(this, 0xC5, 3, MOS6502AddressMode.ZPG, MOS6502Assembly.CMP));
+        opcodes.add(new MOS6502Instr(this, 0xC6, 5, MOS6502AddressMode.ZPG, MOS6502Assembly.DEC));
+        opcodes.add(new MOS6502Instr(this, 0xC7, 2, MOS6502AddressMode.IMP, MOS6502Assembly.XXX));
+        opcodes.add(new MOS6502Instr(this, 0xC8, 2, MOS6502AddressMode.IMP, MOS6502Assembly.INY));
+        opcodes.add(new MOS6502Instr(this, 0xC9, 2, MOS6502AddressMode.IMM, MOS6502Assembly.CMP));
+        opcodes.add(new MOS6502Instr(this, 0xCA, 2, MOS6502AddressMode.IMP, MOS6502Assembly.DEX));
+        opcodes.add(new MOS6502Instr(this, 0xCB, 2, MOS6502AddressMode.IMP, MOS6502Assembly.XXX));
+        opcodes.add(new MOS6502Instr(this, 0xCC, 4, MOS6502AddressMode.ABS, MOS6502Assembly.CPY));
+        opcodes.add(new MOS6502Instr(this, 0xCD, 4, MOS6502AddressMode.ABS, MOS6502Assembly.CMP));
+        opcodes.add(new MOS6502Instr(this, 0xCE, 6, MOS6502AddressMode.ABS, MOS6502Assembly.DEC));
+        opcodes.add(new MOS6502Instr(this, 0xCF, 2, MOS6502AddressMode.IMP, MOS6502Assembly.XXX));
+
+        opcodes.add(new MOS6502Instr(this, 0xD0, 2, MOS6502AddressMode.REL, MOS6502Assembly.BNE));
+        opcodes.add(new MOS6502Instr(this, 0xD1, 5, MOS6502AddressMode.IZY, MOS6502Assembly.CMP));
+        opcodes.add(new MOS6502Instr(this, 0xD2, 2, MOS6502AddressMode.IMP, MOS6502Assembly.XXX));
+        opcodes.add(new MOS6502Instr(this, 0xD3, 2, MOS6502AddressMode.IMP, MOS6502Assembly.XXX));
+        opcodes.add(new MOS6502Instr(this, 0xD4, 2, MOS6502AddressMode.IMP, MOS6502Assembly.XXX));
+        opcodes.add(new MOS6502Instr(this, 0xD5, 4, MOS6502AddressMode.ZPX, MOS6502Assembly.CMP));
+        opcodes.add(new MOS6502Instr(this, 0xD6, 6, MOS6502AddressMode.ZPX, MOS6502Assembly.DEC));
+        opcodes.add(new MOS6502Instr(this, 0xD7, 2, MOS6502AddressMode.IMP, MOS6502Assembly.XXX));
+        opcodes.add(new MOS6502Instr(this, 0xD8, 2, MOS6502AddressMode.IMP, MOS6502Assembly.CLD));
+        opcodes.add(new MOS6502Instr(this, 0xD9, 4, MOS6502AddressMode.ABY, MOS6502Assembly.CMP));
+        opcodes.add(new MOS6502Instr(this, 0xDA, 2, MOS6502AddressMode.IMP, MOS6502Assembly.XXX));
+        opcodes.add(new MOS6502Instr(this, 0xDB, 2, MOS6502AddressMode.IMP, MOS6502Assembly.XXX));
+        opcodes.add(new MOS6502Instr(this, 0xDC, 2, MOS6502AddressMode.IMP, MOS6502Assembly.XXX));
+        opcodes.add(new MOS6502Instr(this, 0xDD, 4, MOS6502AddressMode.ABX, MOS6502Assembly.CMP));
+        opcodes.add(new MOS6502Instr(this, 0xDE, 7, MOS6502AddressMode.ABX, MOS6502Assembly.DEC));
+        opcodes.add(new MOS6502Instr(this, 0xDF, 2, MOS6502AddressMode.IMP, MOS6502Assembly.XXX));
+
+        opcodes.add(new MOS6502Instr(this, 0xE0, 2, MOS6502AddressMode.IMM, MOS6502Assembly.CPX));
+        opcodes.add(new MOS6502Instr(this, 0xE1, 6, MOS6502AddressMode.IZX, MOS6502Assembly.SBC));
+        opcodes.add(new MOS6502Instr(this, 0xE2, 2, MOS6502AddressMode.IMP, MOS6502Assembly.XXX));
+        opcodes.add(new MOS6502Instr(this, 0xE3, 2, MOS6502AddressMode.IMP, MOS6502Assembly.XXX));
+        opcodes.add(new MOS6502Instr(this, 0xE4, 3, MOS6502AddressMode.ZPG, MOS6502Assembly.CPX));
+        opcodes.add(new MOS6502Instr(this, 0xE5, 3, MOS6502AddressMode.ZPG, MOS6502Assembly.SBC));
+        opcodes.add(new MOS6502Instr(this, 0xE6, 5, MOS6502AddressMode.ZPG, MOS6502Assembly.INC));
+        opcodes.add(new MOS6502Instr(this, 0xE7, 2, MOS6502AddressMode.IMP, MOS6502Assembly.XXX));
+        opcodes.add(new MOS6502Instr(this, 0xE8, 2, MOS6502AddressMode.IMP, MOS6502Assembly.INX));
+        opcodes.add(new MOS6502Instr(this, 0xE9, 2, MOS6502AddressMode.IMM, MOS6502Assembly.SBC));
+        opcodes.add(new MOS6502Instr(this, 0xEA, 2, MOS6502AddressMode.IMP, MOS6502Assembly.NOP));
+        opcodes.add(new MOS6502Instr(this, 0xEB, 2, MOS6502AddressMode.IMP, MOS6502Assembly.XXX));
+        opcodes.add(new MOS6502Instr(this, 0xEC, 4, MOS6502AddressMode.ABS, MOS6502Assembly.CPX));
+        opcodes.add(new MOS6502Instr(this, 0xED, 4, MOS6502AddressMode.ABS, MOS6502Assembly.SBC));
+        opcodes.add(new MOS6502Instr(this, 0xEE, 6, MOS6502AddressMode.ABS, MOS6502Assembly.INC));
+        opcodes.add(new MOS6502Instr(this, 0xEF, 2, MOS6502AddressMode.IMP, MOS6502Assembly.XXX));
+
+        opcodes.add(new MOS6502Instr(this, 0xF0, 2, MOS6502AddressMode.REL, MOS6502Assembly.BEQ));
+        opcodes.add(new MOS6502Instr(this, 0xF1, 5, MOS6502AddressMode.IZY, MOS6502Assembly.SBC));
+        opcodes.add(new MOS6502Instr(this, 0xF2, 2, MOS6502AddressMode.IMP, MOS6502Assembly.XXX));
+        opcodes.add(new MOS6502Instr(this, 0xF3, 2, MOS6502AddressMode.IMP, MOS6502Assembly.XXX));
+        opcodes.add(new MOS6502Instr(this, 0xF4, 2, MOS6502AddressMode.IMP, MOS6502Assembly.XXX));
+        opcodes.add(new MOS6502Instr(this, 0xF5, 4, MOS6502AddressMode.ZPX, MOS6502Assembly.SBC));
+        opcodes.add(new MOS6502Instr(this, 0xF6, 6, MOS6502AddressMode.ZPX, MOS6502Assembly.INC));
+        opcodes.add(new MOS6502Instr(this, 0xF7, 2, MOS6502AddressMode.IMP, MOS6502Assembly.XXX));
+        opcodes.add(new MOS6502Instr(this, 0xF8, 2, MOS6502AddressMode.IMP, MOS6502Assembly.SED));
+        opcodes.add(new MOS6502Instr(this, 0xF9, 4, MOS6502AddressMode.ABY, MOS6502Assembly.SBC));
+        opcodes.add(new MOS6502Instr(this, 0xFA, 2, MOS6502AddressMode.IMP, MOS6502Assembly.XXX));
+        opcodes.add(new MOS6502Instr(this, 0xFB, 2, MOS6502AddressMode.IMP, MOS6502Assembly.XXX));
+        opcodes.add(new MOS6502Instr(this, 0xFC, 2, MOS6502AddressMode.IMP, MOS6502Assembly.XXX));
+        opcodes.add(new MOS6502Instr(this, 0xFD, 4, MOS6502AddressMode.ABX, MOS6502Assembly.SBC));
+        opcodes.add(new MOS6502Instr(this, 0xFE, 7, MOS6502AddressMode.ABX, MOS6502Assembly.INC));
+        opcodes.add(new MOS6502Instr(this, 0xFF, 2, MOS6502AddressMode.IMP, MOS6502Assembly.XXX));
     }
 
     public void clock() {
@@ -500,7 +772,7 @@ public class MOS6502 {
     int BCC() {
         if (!getFlag(ProcessorStatusWordFlag.C)) {
             cycles++;
-            absoluteAddress = (absoluteAddress + relativeAddress) & 0xFFFF;
+            absoluteAddress = (PC + relativeAddress) & 0xFFFF;
 
             if ((absoluteAddress & 0xFF00) != (PC & 0xFF00)) {
                 cycles++;
@@ -526,7 +798,7 @@ public class MOS6502 {
     int BCS() {
         if (getFlag(ProcessorStatusWordFlag.C)) {
             cycles++;
-            absoluteAddress = (absoluteAddress + relativeAddress) & 0xFFFF;
+            absoluteAddress = (PC + relativeAddress) & 0xFFFF;
 
             if ((absoluteAddress & 0xFF00) != (PC & 0xFF00)) {
                 cycles++;
@@ -552,7 +824,7 @@ public class MOS6502 {
     int BEQ() {
         if (getFlag(ProcessorStatusWordFlag.Z)) {
             cycles++;
-            absoluteAddress = (absoluteAddress + relativeAddress) & 0xFFFF;
+            absoluteAddress = (PC + relativeAddress) & 0xFFFF;
 
             if ((absoluteAddress & 0xFF00) != (PC & 0xFF00)) {
                 cycles++;
@@ -603,7 +875,7 @@ public class MOS6502 {
     int BMI() {
         if (getFlag(ProcessorStatusWordFlag.N)) {
             cycles++;
-            absoluteAddress = (absoluteAddress + relativeAddress) & 0xFFFF;
+            absoluteAddress = (PC + relativeAddress) & 0xFFFF;
 
             if ((absoluteAddress & 0xFF00) != (PC & 0xFF00)) {
                 cycles++;
@@ -629,7 +901,7 @@ public class MOS6502 {
     int BNE() {
         if (!getFlag(ProcessorStatusWordFlag.Z)) {
             cycles++;
-            absoluteAddress = (absoluteAddress + relativeAddress) & 0xFFFF;
+            absoluteAddress = (PC + relativeAddress) & 0xFFFF;
 
             if ((absoluteAddress & 0xFF00) != (PC & 0xFF00)) {
                 cycles++;
@@ -655,7 +927,7 @@ public class MOS6502 {
     int BPL() {
         if (!getFlag(ProcessorStatusWordFlag.N)) {
             cycles++;
-            absoluteAddress = (absoluteAddress + relativeAddress) & 0xFFFF;
+            absoluteAddress = (PC + relativeAddress) & 0xFFFF;
 
             if ((absoluteAddress & 0xFF00) != (PC & 0xFF00)) {
                 cycles++;
@@ -713,7 +985,7 @@ public class MOS6502 {
     int BVC() {
         if (!getFlag(ProcessorStatusWordFlag.V)) {
             cycles++;
-            absoluteAddress = (absoluteAddress + relativeAddress) & 0xFFFF;
+            absoluteAddress = (PC + relativeAddress) & 0xFFFF;
 
             if ((absoluteAddress & 0xFF00) != (PC & 0xFF00)) {
                 cycles++;
@@ -739,7 +1011,7 @@ public class MOS6502 {
     int BVS() {
         if (getFlag(ProcessorStatusWordFlag.V)) {
             cycles++;
-            absoluteAddress = (absoluteAddress + relativeAddress) & 0xFFFF;
+            absoluteAddress = (PC + relativeAddress) & 0xFFFF;
 
             if ((absoluteAddress & 0xFF00) != (PC & 0xFF00)) {
                 cycles++;

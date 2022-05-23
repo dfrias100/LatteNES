@@ -26,8 +26,8 @@ public enum MOS6502AddressMode {
     IMM, // Immediate
     IMP, // Implied
     IND, // Indirect
-    INX, // Indirect with X offset
-    INY, // Indirect with Y offset
+    IZX, // Indirect with X offset
+    IZY, // Indirect with Y offset
     REL, // Relative
     ZPG, // Zero Page
     ZPX, // Zero Page with X offset

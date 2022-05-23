@@ -52,7 +52,7 @@ public class Memory {
     }
 
     public int readWord(int address) {
-
-        return (0x00 /* This would be the return val */ & 0xFF);
+        System.out.println("Memory called!");
+        return (0x01 /* This would be the return val */ & 0xFF);
     }
 }
