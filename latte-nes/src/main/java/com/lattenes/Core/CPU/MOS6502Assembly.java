@@ -99,4 +99,8 @@ public enum MOS6502Assembly {
         this.mnemonic = mnemonic;
         this.type = type;
     }
+
+    public String getMnemonic() {
+        return mnemonic;
+    }
 }

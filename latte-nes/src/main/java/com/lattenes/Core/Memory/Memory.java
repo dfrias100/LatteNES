@@ -18,6 +18,8 @@
 
 package com.lattenes.Core.Memory;
 
+import java.io.*;
+
 public class Memory {
     /* NES complete memory map
         0x0000-0x07FF - RAM 
@@ -42,17 +44,62 @@ public class Memory {
     */
     private static final int RAM_SIZE = 0x800;
     private byte[] cpuMemory;
+    private byte[] cartridgeROM;
 
     public Memory() {
         cpuMemory = new byte[RAM_SIZE];
+        cartridgeROM = new byte[0x8000];
+
+        final String testRom = "C:\\Users\\dfria\\source\\repos\\NESemu\\latte-nes\\target\\nestest.nes";
+
+        try (
+            InputStream inputStream = new FileInputStream(testRom);
+        ) {
+            int byteRead = -1;
+            inputStream.skip(16);
+            int i = 0;
+
+            while ((byteRead = inputStream.read()) != -1) {
+                cartridgeROM[i] = (byte) byteRead;
+                i++;
+            }
+        } catch(IOException e) {
+            e.printStackTrace();
+        }
     }
 
     public void writeWord(int address, byte value) {
-
+        if (address <= 0x1FFF) {
+            cpuMemory[address & 0x07FF] = value;
+        } else if (address <= 0x3FFF) {
+            // PPU access
+        } else if (address == 0x4015) {
+            // APU status write
+        } else if (address == 0x4016 || address == 0x4017) {
+            // Controller read
+        } else if (address >= 0x4020 && address <= 0xFFFF) {
+            // Cartridge space
+        }
     }
 
     public int readWord(int address) {
-        System.out.println("Memory called!");
-        return (0x01 /* This would be the return val */ & 0xFF);
+        byte data = 0x00;
+
+        if (address <= 0x1FFF) {
+            data = cpuMemory[address & 0x07FF];
+        } else if (address <= 0x3FFF) {
+            // PPU access
+        } else if (address == 0x4015) {
+            // APU status read
+        } else if (address == 0x4016 || address == 0x4017) {
+            // Controller read
+        } else if (address >= 0x4020 && address <= 0xFFFF) {
+            // Cartridge space
+            if (address >= 0xC000) {
+                data = cartridgeROM[address - 0xC000];
+            }
+        }
+
+        return (data & 0xFF);
     }
 }

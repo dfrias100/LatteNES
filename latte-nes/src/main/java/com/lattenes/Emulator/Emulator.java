@@ -18,6 +18,7 @@
 
 package com.lattenes.Emulator;
 
+import java.lang.System.Logger;
 import java.util.Random;
 
 import com.lattenes.Core.Memory.Memory;
@@ -27,11 +28,12 @@ public class Emulator {
     private EmulatorVideo video;
     private Memory memory;
     private MOS6502 cpu;
+    private long systemCycleCount = 0;
 
     public Emulator() {
         video = new EmulatorVideo();
         memory = new Memory();
-        cpu = new MOS6502(memory);
+        cpu = new MOS6502(memory, false);
     }
 
     public void run() {
@@ -54,27 +56,36 @@ public class Emulator {
 
         video.createTexture(framebuffer);
 
-        while (!video.shouldClose()) {
+        while (!video.shouldClose() && systemCycleCount <= 100000) {
             // The PPU would signal a draw update if the frame is ready,
             // for now we have an idle loop
-            video.draw();
+            if ((systemCycleCount & 65535) == 0) {
+                video.draw();
+            }
 
             // Ideally, we would tick all of the components here, but
             // they are yet to be implemented            
-            for (int i = 0; i < 240; i++) {
-                for (int j = 0; j < 256; j++) {
-                    int idx = i * 256 * 4 + j * 4;
-                    framebuffer[idx + 0] = random.nextFloat();
-                    framebuffer[idx + 1] = random.nextFloat();
-                    framebuffer[idx + 2] = random.nextFloat();
-                    framebuffer[idx + 3] = 0.0f;
-                }
-            }
+            
+            //for (int i = 0; i < 240; i++) {
+            //    for (int j = 0; j < 256; j++) {
+            //        int idx = i * 256 * 4 + j * 4;
+            //        framebuffer[idx + 0] = random.nextFloat();
+            //        framebuffer[idx + 1] = random.nextFloat();
+            //        framebuffer[idx + 2] = random.nextFloat();
+            //        framebuffer[idx + 3] = 0.0f;
+            //    }
+            //}
+
+            cpu.clock();
 
             // This would probably go in an if statement where the draw call would
             // be, but for now we just update the random texture
-            video.updateTexture(framebuffer);
+            
+            //video.updateTexture(framebuffer);
+            systemCycleCount++;
         }
+
+        cpu.endLog();
         
         video.cleanup();
     }

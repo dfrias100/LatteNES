@@ -19,6 +19,9 @@
 package com.lattenes.Core.CPU;
 
 import java.util.ArrayList;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
 
 import com.lattenes.Core.Memory.Memory;
 
@@ -30,6 +33,8 @@ public class MOS6502 {
     private short X;
     private short Y;
 
+    private boolean logging = false;
+
     private int fetchedVal = 0;
     private int temp = 0;
     private int absoluteAddress = 0;
@@ -37,6 +42,12 @@ public class MOS6502 {
     private int opcode = 0;
     private int cycles = 0;
     private long cyclesCount = 0;
+    private File logFile;
+    private FileWriter logFileWriter;
+
+    private final String logName = "C:\\Users\\dfria\\source\\repos\\NESemu\\latte-nes\\target\\MOS6502execlog.txt";
+
+    MOS6502Instr instruction;
 
     private Memory memory;
 
@@ -71,16 +82,28 @@ public class MOS6502 {
         return (processorStatusWord & flag.value) != 0;
     }
 
-    public MOS6502(Memory memory) {
+    public MOS6502(Memory memory, boolean logging) {
         this.memory = memory;
         opcodes = new ArrayList<MOS6502Instr>();
 
-        PC = 0x0000;
-        SP = (byte) 0xFD;
-        processorStatusWord = (byte) (0x00 | (byte) ProcessorStatusWordFlag.U.value);
+        PC = 0xC000;
+        SP = 0xFD;
+        processorStatusWord = 0x24;
         A = 0x00;
         X = 0x00;
         Y = 0x00;
+
+        if (logging) {
+            try {
+                logFile = new File(logName);
+                if (!logFile.exists()) {
+                    logFile.createNewFile();
+                }
+                logFileWriter = new FileWriter(logFile);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
 
         opcodes.add(new MOS6502Instr(this, 0x00, 7, MOS6502AddressMode.IMP, MOS6502Assembly.BRK));
         opcodes.add(new MOS6502Instr(this, 0x01, 6, MOS6502AddressMode.IZX, MOS6502Assembly.ORA));
@@ -355,8 +378,189 @@ public class MOS6502 {
         opcodes.add(new MOS6502Instr(this, 0xFF, 2, MOS6502AddressMode.IMP, MOS6502Assembly.XXX));
     }
 
+    public void endLog() {
+        if (logFileWriter != null) {
+            try {
+                logFileWriter.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    private String disassembly() {
+        int debugPC = (PC - 1) & 0xFFFF;
+        int debugOpcode = opcode;
+        MOS6502Instr debugInstr = opcodes.get(opcode);
+        MOS6502AddressMode debugAddressMode = debugInstr.addressingMode;
+        MOS6502Assembly debugAssembly = debugInstr.assembly;
+        String mnemonic = debugAssembly.getMnemonic();
+
+        String byteString = String.format("%02X", debugOpcode) + "       ";
+        int operand1 = 0;
+        int operand2 = 0;
+
+        switch (debugAddressMode) {
+            case IMP:
+            case ACC:
+                break;
+            case REL:
+            case IZY:
+            case IZX:
+            case ZPG:
+            case ZPX:
+            case ZPY:
+            case IMM:
+                operand1 = memory.readWord(debugPC + 1);
+                byteString = String.format("%02X", debugOpcode) + " " + String.format("%02X", operand1);
+                byteString += "    ";
+                break;
+            default:
+                operand1 = memory.readWord(debugPC + 1);
+                operand2 = memory.readWord(debugPC + 2);
+                byteString = String.format("%02X", debugOpcode) + " " + String.format("%02X", operand1) 
+                             + " " + String.format("%02X", operand2);
+                byteString += " ";
+                break;
+        }
+        int addr;
+        switch (debugAddressMode) {
+            case IMP:
+                break;
+            case ACC:
+                mnemonic += " A";
+                break;
+            case REL:
+                debugPC += 2;
+                if ((operand1 & 0x80) > 0) {
+                    operand1 |= 0xFFFFFF00;
+                }
+                debugPC += operand1;
+                debugPC &= 0xFFFF;
+                mnemonic += " " + String.format("$%04X", debugPC);
+                break;
+            case IZY:
+                addr = (memory.readWord((operand1 + 1) & 0x00FF) << 8) | memory.readWord(operand1 & 0x00FF);
+                mnemonic += " " + String.format("($%02X),Y", operand1) 
+                        + " = " + String.format("%04X", addr & 0xFFFF)
+                        + " @ " + String.format("%04X", (addr + Y) & 0xFFFF)
+                        + " = " + String.format("%02X", memory.readWord((addr + Y) & 0xFFFF ));
+                break;
+            case IZX:
+                addr = (memory.readWord((operand1 + X + 1) & 0x00FF) << 8) | memory.readWord((operand1 + X) & 0x00FF);
+                mnemonic += " " + String.format("($%02X,X)", operand1) 
+                        + " @ " + String.format("%02X", (operand1 + X) & 0x00FF)
+                        + " = " + String.format("%04X", addr)
+                        + " = " + String.format("%02X", memory.readWord(addr));
+                break;
+            case ZPG:
+                mnemonic += " " + String.format("$%02X", operand1) + " = " 
+                        + String.format("%02X", memory.readWord(operand1));
+                break;
+            case ZPX:
+                mnemonic += " " + String.format("$%02X,X", operand1) + " @ " 
+                        + String.format("%02X", (operand1 + X) & 0xFF) + " = "
+                        + String.format("%02X", memory.readWord((operand1 + X) & 0xFF));
+                break;
+            case ZPY:
+                mnemonic += " " + String.format("$%02X,Y", operand1) + " @ " 
+                        + String.format("%02X", (operand1 + Y) & 0xFF) + " = "
+                        + String.format("%02X", memory.readWord((operand1 + Y) & 0xFF));
+                break;
+            case IMM:
+                mnemonic += " " + String.format("#$%02X", operand1);
+                break;
+            case ABS:
+                mnemonic += " " + String.format("$%04X", ((operand2 << 8) | operand1));
+                if (debugAssembly != MOS6502Assembly.JMP && debugAssembly != MOS6502Assembly.JSR) {
+                    mnemonic += " = " + String.format("%02X", memory.readWord((operand2 << 8) | operand1));
+                }
+                break;
+            case ABX:
+                addr = (operand2 << 8) | operand1;
+                mnemonic += " " + String.format("$%04X,X", addr)
+                        + " @ " + String.format("%04X", (addr + X) & 0xFFFF) 
+                        + " = " + String.format("%02X", memory.readWord((addr + X) & 0xFFFF));
+                break;
+            case ABY:
+                addr = (operand2 << 8) | operand1;
+                mnemonic += " " + String.format("$%04X,Y", addr)
+                        + " @ " + String.format("%04X", (addr + Y) & 0xFFFF) 
+                        + " = " + String.format("%02X", memory.readWord((addr + Y) & 0xFFFF));
+                break;
+            case IND:
+                addr = (operand2 << 8) | operand1;
+                int hiByte;
+                if (operand1 == 0xFF) {
+                    hiByte = memory.readWord(addr & 0xFF00);
+                } else {
+                    hiByte = memory.readWord((addr + 1) & 0xFFFF);
+                }
+                mnemonic += " " + String.format("($%04X)", addr) + " = " 
+                        + String.format("%02X", hiByte) 
+                        + String.format("%02X", memory.readWord(addr));
+                break;
+        }
+
+        return byteString + " " + mnemonic;
+    }
+
+    private String registers() {
+        StringBuilder sb = new StringBuilder();
+        sb.append("A:" + String.format("%02X", A));
+        sb.append(" X:" + String.format("%02X", X));
+        sb.append(" Y:" + String.format("%02X", Y));
+        sb.append(" P:" + String.format("%02X", processorStatusWord));
+        sb.append(" SP:" + String.format("%02X", SP));
+        return sb.toString();
+    }
+
     public void clock() {
-        // TODO: Implement
+        if (cycles == 0) {
+            setFlag(ProcessorStatusWordFlag.U, true);
+
+            // Get the next opcode
+            opcode = memory.readWord(PC++);
+
+            // Log this execution
+            if (logging) {
+                try {
+                    final int spaceLength = 29;
+                    logFileWriter.write(String.format("%04X", (PC - 1) & 0xFFFF));
+                    logFileWriter.write("  ");
+                    String disasm = disassembly();
+                    logFileWriter.write(disasm);
+                    int spaces = spaceLength - (disasm.length() - 13);
+                    for (int i = 0; i < spaces; i++) {
+                        logFileWriter.write(" ");
+                    }
+                    logFileWriter.write(registers());
+                    logFileWriter.write("\n");
+                } catch(IOException e) {
+                    e.printStackTrace();
+                }
+            }
+
+            // PC is always 2 bytes, but in this class
+            // we have it as an int
+            PC &= 0xFFFF;
+
+            instruction = opcodes.get(opcode);
+            cycles = instruction.cycles;
+
+            // Execute the instruction
+            int result1 = instruction.processAddressingMode();
+            int result2 = instruction.execute();
+
+            // Determine if we need an additional clock cycle.
+            // This isn't applicable in branch instructions
+            // those instructions directly add to the
+            // cycles variable based on the conditions
+            // of the branch.
+            cycles += (result1 & result2) > 0 ? 1 : 0;
+        }
+        cyclesCount++;
+        cycles--;
     } 
 
     private int fetch() {
@@ -590,7 +794,7 @@ public class MOS6502 {
         PC = PC & 0xFFFF;
         int ptr = ((hiPtr << 8) | loPtr) & 0xFFFF;
 
-        if ((ptr & 0xFF00) == 0xFF00) {
+        if ((ptr & 0x00FF) == 0x00FF) {
             // LSB is at the boundary of the page
             absoluteAddress = (memory.readWord(ptr & 0xFF00) << 8) | memory.readWord(ptr);
             absoluteAddress &= 0xFFFF;
@@ -1323,6 +1527,7 @@ public class MOS6502 {
     */
     int JSR() {
         PC--;
+        PC &= 0xFFFF;
 
         memory.writeWord(0x0100 + SP, (byte) (PC >> 8));
         SP--;
@@ -1542,6 +1747,7 @@ public class MOS6502 {
         SP++;
         SP &= 0xFF;
         processorStatusWord = (byte) memory.readWord(0x0100 + SP);
+        setFlag(ProcessorStatusWordFlag.B, false);
         setFlag(ProcessorStatusWordFlag.U, true);
 
         return 0;
@@ -1680,7 +1886,7 @@ public class MOS6502 {
 
             So, all we need to do is add val to A and C, same as ADC 
         */
-        temp = A + val + (getFlag(ProcessorStatusWordFlag.C) ? 0 : 1);
+        temp = A + val + (getFlag(ProcessorStatusWordFlag.C) ? 1 : 0);
         setFlag(ProcessorStatusWordFlag.C, temp > 255);
         setFlag(ProcessorStatusWordFlag.Z, (temp & 0xFF) == 0);
         setFlag(ProcessorStatusWordFlag.V, ((~(A ^ val) & (A ^ temp)) & 0x80) > 0);
