@@ -50,7 +50,7 @@ public class Memory {
         cpuMemory = new byte[RAM_SIZE];
         cartridgeROM = new byte[0x8000];
 
-        final String testRom = "C:\\Users\\dfria\\source\\repos\\NESemu\\latte-nes\\target\\nestest.nes";
+        final String testRom = "nestest.nes";
 
         try (
             InputStream inputStream = new FileInputStream(testRom);

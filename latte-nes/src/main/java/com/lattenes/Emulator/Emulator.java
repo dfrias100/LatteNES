@@ -18,7 +18,6 @@
 
 package com.lattenes.Emulator;
 
-import java.lang.System.Logger;
 import java.util.Random;
 
 import com.lattenes.Core.Memory.Memory;

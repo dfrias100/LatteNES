@@ -45,7 +45,7 @@ public class MOS6502 {
     private File logFile;
     private FileWriter logFileWriter;
 
-    private final String logName = "C:\\Users\\dfria\\source\\repos\\NESemu\\latte-nes\\target\\MOS6502execlog.txt";
+    private final String logName = "MOS6502execlog.txt";
 
     MOS6502Instr instruction;
 
