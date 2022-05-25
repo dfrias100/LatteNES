@@ -16,14 +16,14 @@
  * this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.lattenes;
+package com.lattenes.Core.Cartridge;
 
-import com.lattenes.Emulator.Emulator;
+public class Tuple<T, G> {
+    public T first;
+    public G second;
 
-public class LatteNes {
-    public static void main( String[] args ) {
-        Emulator emulatorCore = new Emulator();
-        emulatorCore.loadAndInit("");
-        emulatorCore.run();
+    public Tuple(T first, G second) {
+        this.first = first;
+        this.second = second;
     }
 }

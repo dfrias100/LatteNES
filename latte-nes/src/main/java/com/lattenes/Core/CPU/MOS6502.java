@@ -19,11 +19,12 @@
 package com.lattenes.Core.CPU;
 
 import java.util.ArrayList;
+
+import com.lattenes.Core.Memory;
+
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
-
-import com.lattenes.Core.Memory.Memory;
 
 public class MOS6502 {
     private int PC;
@@ -85,6 +86,7 @@ public class MOS6502 {
     public MOS6502(Memory memory, boolean logging) {
         this.memory = memory;
         opcodes = new ArrayList<MOS6502Instr>();
+        this.logging = logging;
 
         PC = 0xC000;
         SP = 0xFD;

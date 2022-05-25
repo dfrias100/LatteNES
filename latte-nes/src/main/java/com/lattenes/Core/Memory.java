@@ -16,9 +16,10 @@
  * this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.lattenes.Core.Memory;
+package com.lattenes.Core;
 
-import java.io.*;
+import com.lattenes.Core.Cartridge.Cartridge;
+import com.lattenes.Core.Cartridge.Tuple;
 
 public class Memory {
     /* NES complete memory map
@@ -43,61 +44,43 @@ public class Memory {
         - Double-word: 16-bits (2 bytes)
     */
     private static final int RAM_SIZE = 0x800;
-    private byte[] cpuMemory;
-    private byte[] cartridgeROM;
+    private byte[] CPUMemory;
+    private Cartridge cartridge;
 
-    public Memory() {
-        cpuMemory = new byte[RAM_SIZE];
-        cartridgeROM = new byte[0x8000];
-
-        final String testRom = "nestest.nes";
-
-        try (
-            InputStream inputStream = new FileInputStream(testRom);
-        ) {
-            int byteRead = -1;
-            inputStream.skip(16);
-            int i = 0;
-
-            while ((byteRead = inputStream.read()) != -1) {
-                cartridgeROM[i] = (byte) byteRead;
-                i++;
-            }
-        } catch(IOException e) {
-            e.printStackTrace();
-        }
+    public Memory(Cartridge cartridge) {
+        CPUMemory = new byte[RAM_SIZE];
+        this.cartridge = cartridge;
     }
 
     public void writeWord(int address, byte value) {
-        if (address <= 0x1FFF) {
-            cpuMemory[address & 0x07FF] = value;
+
+        if (cartridge.writeWordFromCPU(address, value)) {
+            // Nothing to do if the cartridge wrote the value
+            return;
+        } else if (address <= 0x1FFF) {
+            CPUMemory[address & 0x07FF] = value;
         } else if (address <= 0x3FFF) {
             // PPU access
         } else if (address == 0x4015) {
             // APU status write
         } else if (address == 0x4016 || address == 0x4017) {
             // Controller read
-        } else if (address >= 0x4020 && address <= 0xFFFF) {
-            // Cartridge space
         }
     }
 
     public int readWord(int address) {
         byte data = 0x00;
-
-        if (address <= 0x1FFF) {
-            data = cpuMemory[address & 0x07FF];
+        Tuple<Boolean, Byte> result;
+        if ((result = cartridge.readWordFromCPU(address)).first) {
+            data = result.second;
+        } else if (address <= 0x1FFF) {
+            data = CPUMemory[address & 0x07FF];
         } else if (address <= 0x3FFF) {
             // PPU access
         } else if (address == 0x4015) {
             // APU status read
         } else if (address == 0x4016 || address == 0x4017) {
             // Controller read
-        } else if (address >= 0x4020 && address <= 0xFFFF) {
-            // Cartridge space
-            if (address >= 0xC000) {
-                data = cartridgeROM[address - 0xC000];
-            }
         }
 
         return (data & 0xFF);

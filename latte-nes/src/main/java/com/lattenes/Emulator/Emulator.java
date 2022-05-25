@@ -20,19 +20,24 @@ package com.lattenes.Emulator;
 
 import java.util.Random;
 
-import com.lattenes.Core.Memory.Memory;
-import com.lattenes.Core.CPU.MOS6502;
+import com.lattenes.Core.System;
 
 public class Emulator {
     private EmulatorVideo video;
-    private Memory memory;
-    private MOS6502 cpu;
-    private long systemCycleCount = 0;
+    private System NES;
 
     public Emulator() {
         video = new EmulatorVideo();
-        memory = new Memory();
-        cpu = new MOS6502(memory, false);
+    }
+
+    public boolean loadAndInit(String path) {
+        try {
+            NES = new System(path);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
+        return true;
     }
 
     public void run() {
@@ -55,10 +60,10 @@ public class Emulator {
 
         video.createTexture(framebuffer);
 
-        while (!video.shouldClose() && systemCycleCount <= 100000) {
+        while (!video.shouldClose() && NES.getCycleCount() <= 80000) {
             // The PPU would signal a draw update if the frame is ready,
             // for now we have an idle loop
-            if ((systemCycleCount & 65535) == 0) {
+            if (NES.frameReady()) {
                 video.draw();
             }
 
@@ -75,16 +80,15 @@ public class Emulator {
             //    }
             //}
 
-            cpu.clock();
+            NES.tick();
 
             // This would probably go in an if statement where the draw call would
             // be, but for now we just update the random texture
             
             //video.updateTexture(framebuffer);
-            systemCycleCount++;
         }
 
-        cpu.endLog();
+        NES.endLog();
         
         video.cleanup();
     }

@@ -16,14 +16,26 @@
  * this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.lattenes;
+package com.lattenes.Core.Cartridge.Mapper;
 
-import com.lattenes.Emulator.Emulator;
+import com.lattenes.Core.Cartridge.Mirror;
+import com.lattenes.Core.Cartridge.Tuple;
 
-public class LatteNes {
-    public static void main( String[] args ) {
-        Emulator emulatorCore = new Emulator();
-        emulatorCore.loadAndInit("");
-        emulatorCore.run();
-    }
+public interface IMapper {
+    // Read and writing methods return a tuple
+    // The first element denotes if the operation was successful
+    // The second element is the newly mapped address
+
+    public Tuple<Boolean, Integer> writeWordFromCPU(int address, byte value);
+    public Tuple<Boolean, Integer> writeWordFromPPU(int address, byte value);
+
+    public Tuple<Boolean, Integer> readWordFromCPU(int address);
+    public Tuple<Boolean, Integer> readWordFromPPU(int address);
+
+    public void reset();
+
+    public Mirror getMirroring();
+
+    public boolean getIRQ();
+    public void clearIRQ();
 }
