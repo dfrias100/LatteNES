@@ -46,10 +46,12 @@ public class Memory {
     private static final int RAM_SIZE = 0x800;
     private byte[] CPUMemory;
     private Cartridge cartridge;
+    private PPU NESPPU;
 
-    public Memory(Cartridge cartridge) {
+    public Memory(Cartridge cartridge, PPU NESPPU) {
         CPUMemory = new byte[RAM_SIZE];
         this.cartridge = cartridge;
+        this.NESPPU = NESPPU;
     }
 
     public void writeWord(int address, byte value) {
@@ -84,5 +86,13 @@ public class Memory {
         }
 
         return (data & 0xFF);
+    }
+
+    public boolean pollNMI() {
+        return NESPPU.requestingNMI();
+    }
+
+    public void clearNMI() {
+        NESPPU.clearNMI();
     }
 }

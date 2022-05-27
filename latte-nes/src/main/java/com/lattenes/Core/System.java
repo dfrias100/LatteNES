@@ -24,13 +24,14 @@ import com.lattenes.Core.Cartridge.Cartridge;
 public class System {
     private Memory memoryManagementUnit;
     private MOS6502 CPU;
-    private PPU PPU;
+    private PPU NESPPU;
     private Cartridge cartridge;
     private long systemCycleCount = 0;
 
     public System(String cartridgeFile) {
         Cartridge cartridge = new Cartridge(cartridgeFile);
-        memoryManagementUnit = new Memory(cartridge);
+        NESPPU = new PPU(cartridge);
+        memoryManagementUnit = new Memory(cartridge, NESPPU);
         CPU = new MOS6502(memoryManagementUnit, true);
     }
 
@@ -53,6 +54,6 @@ public class System {
     }
 
     public float[] getScreen() {
-        return PPU.screen;
+        return NESPPU.screen;
     }
 }

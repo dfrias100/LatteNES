@@ -83,6 +83,10 @@ public class MOS6502 {
         return (processorStatusWord & flag.value) != 0;
     }
 
+    private boolean systemRequestingNMI() {
+        return memory.pollNMI();
+    }
+
     public MOS6502(Memory memory, boolean logging) {
         this.memory = memory;
         opcodes = new ArrayList<MOS6502Instr>();
@@ -519,6 +523,12 @@ public class MOS6502 {
 
     public void clock() {
         if (cycles == 0) {
+            if (systemRequestingNMI()) {
+                memory.clearNMI();
+                NMI();
+                return;
+            }
+
             setFlag(ProcessorStatusWordFlag.U, true);
 
             // Get the next opcode
@@ -579,7 +589,7 @@ public class MOS6502 {
     // Maskable Interrupts
     // Pushes the PC and Processor Status Word to the stack
     // Reads the new PC from 0xFFFE
-    public void IRQ() {
+    public boolean IRQ() {
         if (!getFlag(ProcessorStatusWordFlag.I)) {
             memory.writeWord(0x0100 + SP, (byte) (PC >> 8));
             SP--;
@@ -600,7 +610,9 @@ public class MOS6502 {
             PC |= (memory.readWord(absoluteAddress + 1) << 8);
 
             cycles = 7;
+            return true;
         }
+        return false;
     }
 
     // Non-maskable Interrupts
