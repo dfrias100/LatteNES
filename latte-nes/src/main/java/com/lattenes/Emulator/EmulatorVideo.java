@@ -124,16 +124,7 @@ public class EmulatorVideo {
             throw new RuntimeException("Failed to create the GLFW window");
         }
 
-        // TODO: Change this later for emulator input support   
-        glfwSetKeyCallback(window, (window, key, scancode, action, mods) -> {
-            if (key == GLFW_KEY_ESCAPE && action == GLFW_RELEASE) {
-                glfwSetWindowShouldClose(window, true);
-            }
-
-            if (key == GLFW_KEY_L) {
-                system.pressStart();
-            }
-        });
+        glfwSetKeyCallback(window, EmulatorInput::keyboardInputCallback);
 
         // Set our resize call back, this changes the viewport
         glfwSetFramebufferSizeCallback(window, this::windowResizeCallback);
@@ -168,9 +159,6 @@ public class EmulatorVideo {
 
         // Set the clear color
         glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
-        
-        // Something to print to the terminal
-        System.out.println("Hello LWJGL " + Version.getVersion() + "!");
 
         // Create the pixel buffer
         pixels = BufferUtils.createFloatBuffer(NES_WIDTH * NES_HEIGHT * 4);
@@ -254,9 +242,6 @@ public class EmulatorVideo {
         displayTexture();
         glFlush();
         glfwSwapBuffers(window);
-    }
-
-    public void pollEvents() {
         glfwPollEvents();
     }
 

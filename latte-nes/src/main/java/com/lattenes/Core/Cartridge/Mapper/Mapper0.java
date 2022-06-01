@@ -44,9 +44,18 @@ public class Mapper0 implements IMapper {
 
     @Override
     public Tuple<Boolean, Integer> writeWordFromPPU(int address, byte value) {
-        // Mapper 0 has no RAM, so it cannot be written to
-        // Return false, with no address offset
-        return new Tuple<Boolean, Integer>(false, 0);
+        // Mapper 0 can have CHR RAM but it is determined by the number of CHR banks
+        // if the iNES header indicated 0 CHR banks, then the CHR RAM is enabled
+        // otherwise it is disabled and RAM cannot be written to
+        int newAddress = 0;
+        boolean writeSuccess = false;
+        if (address >= 0x0000 && address <= 0x1FFF && CHRBanks == 0) {
+            // CHR RAM is enabled
+            newAddress = address;
+            writeSuccess = true;
+        }
+
+        return new Tuple<Boolean, Integer>(writeSuccess, newAddress);
     }
 
     @Override

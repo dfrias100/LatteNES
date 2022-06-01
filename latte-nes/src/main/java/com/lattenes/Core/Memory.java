@@ -48,8 +48,8 @@ public class Memory {
     private Cartridge cartridge;
     private PPU NESPPU;
     private byte[] controllers;
-    private byte controller1;
-    private byte controller2;
+    public byte controller1;
+    public byte controller2;
 
     public Memory(Cartridge cartridge, PPU NESPPU) {
         CPUMemory = new byte[RAM_SIZE];
@@ -103,9 +103,5 @@ public class Memory {
 
     public void clearNMI() {
         NESPPU.clearNMI();
-    }
-
-    public void pressStart() {
-        controller1 |= 0x10;
     }
 }

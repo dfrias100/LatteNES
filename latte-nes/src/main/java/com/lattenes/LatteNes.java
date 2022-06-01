@@ -23,7 +23,7 @@ import com.lattenes.Emulator.Emulator;
 public class LatteNes {
     public static void main( String[] args ) {
         Emulator emulatorCore = new Emulator();
-        emulatorCore.loadAndInit("");
+        emulatorCore.loadAndInit(args[0]);
         emulatorCore.run();
     }
 }

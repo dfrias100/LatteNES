@@ -29,7 +29,12 @@ public class System {
     private long systemCycleCount = 0;
 
     public System(String cartridgeFile) {
-        Cartridge cartridge = new Cartridge(cartridgeFile);
+        try {
+            cartridge = new Cartridge(cartridgeFile);
+        } catch (Exception e) {
+            e.printStackTrace();
+            java.lang.System.exit(-1);
+        }
         NESPPU = new PPU(cartridge);
         memoryManagementUnit = new Memory(cartridge, NESPPU);
         CPU = new MOS6502(memoryManagementUnit, false);
@@ -66,7 +71,7 @@ public class System {
         return NESPPU.screen;
     }
 
-    public void pressStart() {
-        memoryManagementUnit.pressStart();
+    public Memory getMemory() {
+        return memoryManagementUnit;
     }
 }

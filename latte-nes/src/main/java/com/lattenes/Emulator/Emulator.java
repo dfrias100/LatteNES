@@ -18,10 +18,7 @@
 
 package com.lattenes.Emulator;
 
-import java.util.Random;
-
 import com.lattenes.Core.System;
-import org.lwjgl.glfw.GLFW.*;
 
 public class Emulator {
     private EmulatorVideo video;
@@ -40,6 +37,9 @@ public class Emulator {
             return false;
         }
         video.system = NES;
+        EmulatorInput.createTupleArray();
+        EmulatorInput.initKeys();
+        EmulatorInput.attachMMU(NES.getMemory());
         return true;
     }
 
@@ -58,7 +58,6 @@ public class Emulator {
         startTime = video.getTime();
         while (!video.shouldClose()) {
             startFrame = java.lang.System.nanoTime();
-            video.pollEvents(); 
             do {
                 NES.tick();
             } while (!NES.frameReady());
