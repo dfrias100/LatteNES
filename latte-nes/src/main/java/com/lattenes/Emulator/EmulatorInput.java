@@ -5,7 +5,7 @@ import static org.lwjgl.glfw.GLFW.*;
 import java.lang.reflect.Array;
 
 import com.lattenes.Core.Memory;
-import com.lattenes.Core.Cartridge.Tuple;
+import com.lattenes.Core.Tuple;
 
 public class EmulatorInput {
     static int[] keys = new int[GLFW_KEY_LAST];
