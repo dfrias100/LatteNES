@@ -35,6 +35,8 @@ public class EmulatorVideo {
     // Window handle
     private long window;
 
+    com.lattenes.Core.System system;
+
     // Shader programs
     private int vertShaderProgram;
     private int fragShaderProgram;
@@ -100,6 +102,10 @@ public class EmulatorVideo {
         windowHeight = height;
     }
 
+    public double getTime() {
+        return glfwGetTime();
+    }
+
     public void init() {
         GLFWErrorCallback.createPrint(System.err).set();
 
@@ -122,6 +128,10 @@ public class EmulatorVideo {
         glfwSetKeyCallback(window, (window, key, scancode, action, mods) -> {
             if (key == GLFW_KEY_ESCAPE && action == GLFW_RELEASE) {
                 glfwSetWindowShouldClose(window, true);
+            }
+
+            if (key == GLFW_KEY_L) {
+                system.pressStart();
             }
         });
 
@@ -244,6 +254,9 @@ public class EmulatorVideo {
         displayTexture();
         glFlush();
         glfwSwapBuffers(window);
+    }
+
+    public void pollEvents() {
         glfwPollEvents();
     }
 

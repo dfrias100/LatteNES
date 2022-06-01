@@ -21,10 +21,12 @@ package com.lattenes.Emulator;
 import java.util.Random;
 
 import com.lattenes.Core.System;
+import org.lwjgl.glfw.GLFW.*;
 
 public class Emulator {
     private EmulatorVideo video;
     private System NES;
+    private long startFrame = 0;
 
     public Emulator() {
         video = new EmulatorVideo();
@@ -37,56 +39,41 @@ public class Emulator {
             e.printStackTrace();
             return false;
         }
+        video.system = NES;
         return true;
+    }
+
+    private void capFrameRate(double fps) {
+        double expectedFrametime = 1e9 / fps;
+        long expectedFinishTime = startFrame + (long) expectedFrametime;
+        while (java.lang.System.nanoTime() < expectedFinishTime) {}
     }
 
     public void run() {
         video.init();
+
+        video.createTexture(NES.getScreen());
+        double startTime = 0.0, endTime = 0.0;
         
-        // Dummy texture, just to show something
-        // In reality, we would pass the texture from the PPU
-        float[] framebuffer = new float[240 * 256 * 4];
-        Random random = new Random();
+        startTime = video.getTime();
+        while (!video.shouldClose()) {
+            startFrame = java.lang.System.nanoTime();
+            video.pollEvents(); 
+            do {
+                NES.tick();
+            } while (!NES.frameReady());
 
-        for (int i = 0; i < 240; i++) {
-            for (int j = 0; j < 256; j++) {
-                int idx = i * 256 * 4 + j * 4;
-                framebuffer[idx + 0] = random.nextFloat();
-                framebuffer[idx + 1] = random.nextFloat();
-                framebuffer[idx + 2] = random.nextFloat();
-                framebuffer[idx + 3] = 0.0f;
-            }
+            video.updateTexture(NES.getScreen());
+            NES.clearFrameReady();
+            video.draw();
+            capFrameRate(60.0988);
         }
+        endTime = video.getTime();
 
-        video.createTexture(framebuffer);
-
-        while (!video.shouldClose() && NES.getCycleCount() <= 80000) {
-            // The PPU would signal a draw update if the frame is ready,
-            // for now we have an idle loop
-            if (NES.frameReady()) {
-                video.draw();
-            }
-
-            // Ideally, we would tick all of the components here, but
-            // they are yet to be implemented            
-            
-            //for (int i = 0; i < 240; i++) {
-            //    for (int j = 0; j < 256; j++) {
-            //        int idx = i * 256 * 4 + j * 4;
-            //        framebuffer[idx + 0] = random.nextFloat();
-            //        framebuffer[idx + 1] = random.nextFloat();
-            //        framebuffer[idx + 2] = random.nextFloat();
-            //        framebuffer[idx + 3] = 0.0f;
-            //    }
-            //}
-
-            NES.tick();
-
-            // This would probably go in an if statement where the draw call would
-            // be, but for now we just update the random texture
-            
-            //video.updateTexture(framebuffer);
-        }
+        long CPUclocks = NES.getCycleCount() / 3;
+        double elapsedTime = endTime - startTime;
+        double MHz = CPUclocks / elapsedTime / 1000000.0;
+        java.lang.System.out.println("CPU MHz: " + MHz);
 
         NES.endLog();
         

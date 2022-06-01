@@ -19,7 +19,6 @@
 package com.lattenes.Core.Cartridge;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.io.*;
 
@@ -36,27 +35,29 @@ public class Cartridge {
 
     private IMapper mapper;
 
-    private Mirror cartMirror;
+    private Mirror cartMirror = Mirror.VERTICAL;
 
     public Cartridge(String fileName) {
         prgMEM = new ArrayList<Byte>(Collections.nCopies(0x4000, (byte) 0));
         chrMEM = new ArrayList<Byte>(Collections.nCopies(0x2000, (byte) 0));
 
-        final String testRom = "nestest.nes";
+        PRGBanks = 2;
+
+        final String testRom = "lunarpool.nes";
 
         try (InputStream inputStream = new FileInputStream(testRom)) {
             int byteRead = -1;
             inputStream.skip(16);
             int i = 0;
 
-            while ((byteRead = inputStream.read()) != -1 && i < prgMEM.size()) {
+            while (i < prgMEM.size() && (byteRead = inputStream.read()) != -1) {
                 prgMEM.set(i, (byte) byteRead);
                 i++;
             }
 
             i = 0;
 
-            while ((byteRead = inputStream.read()) != -1 && i < chrMEM.size()) {
+            while (i < chrMEM.size() && (byteRead = inputStream.read()) != -1) {
                 chrMEM.set(i, (byte) byteRead);
                 i++;
             }
@@ -95,7 +96,7 @@ public class Cartridge {
 
         if ((mapperReadAttempt = mapper.readWordFromPPU(address)).first) {
             readSuccessful = true;
-            data = prgMEM.get(mapperReadAttempt.second);
+            data = chrMEM.get(mapperReadAttempt.second);
         }
 
         return new Tuple<Boolean, Byte>(readSuccessful, data);

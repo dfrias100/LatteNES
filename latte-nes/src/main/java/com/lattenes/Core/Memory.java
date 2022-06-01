@@ -47,9 +47,13 @@ public class Memory {
     private byte[] CPUMemory;
     private Cartridge cartridge;
     private PPU NESPPU;
+    private byte[] controllers;
+    private byte controller1;
+    private byte controller2;
 
     public Memory(Cartridge cartridge, PPU NESPPU) {
         CPUMemory = new byte[RAM_SIZE];
+        controllers = new byte[2];
         this.cartridge = cartridge;
         this.NESPPU = NESPPU;
     }
@@ -63,10 +67,12 @@ public class Memory {
             CPUMemory[address & 0x07FF] = value;
         } else if (address <= 0x3FFF) {
             // PPU access
+            NESPPU.writeToPPUFromCPU(address, value);
         } else if (address == 0x4015) {
             // APU status write
         } else if (address == 0x4016 || address == 0x4017) {
-            // Controller read
+            // Controller write
+            controllers[address & 0x1] = (address & 0x1) == 0 ? controller1 : controller2;
         }
     }
 
@@ -79,10 +85,13 @@ public class Memory {
             data = CPUMemory[address & 0x07FF];
         } else if (address <= 0x3FFF) {
             // PPU access
+            data = NESPPU.readPPUFromCPU(address);
         } else if (address == 0x4015) {
             // APU status read
         } else if (address == 0x4016 || address == 0x4017) {
             // Controller read
+            data = (controllers[address & 0x1] & 0x80) != 0 ? (byte) 0x01 : 0x00;
+            controllers[address & 0x1] <<= 1;
         }
 
         return (data & 0xFF);
@@ -94,5 +103,9 @@ public class Memory {
 
     public void clearNMI() {
         NESPPU.clearNMI();
+    }
+
+    public void pressStart() {
+        controller1 |= 0x10;
     }
 }

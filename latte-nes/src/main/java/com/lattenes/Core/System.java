@@ -32,16 +32,25 @@ public class System {
         Cartridge cartridge = new Cartridge(cartridgeFile);
         NESPPU = new PPU(cartridge);
         memoryManagementUnit = new Memory(cartridge, NESPPU);
-        CPU = new MOS6502(memoryManagementUnit, true);
+        CPU = new MOS6502(memoryManagementUnit, false);
+        CPU.reset();
     }
 
     public boolean frameReady() {
-        // return PPU.frameReady;
-        return (systemCycleCount % 65535) == 0;
+        return NESPPU.frameReady;
+    }
+
+    public void clearFrameReady() {
+        NESPPU.frameReady = false;
     }
 
     public void tick() {
-        CPU.clock();
+        NESPPU.clock();
+        
+        if (systemCycleCount % 3 == 0) {
+            CPU.clock();
+        }
+
         systemCycleCount++;
     }
 
@@ -55,5 +64,9 @@ public class System {
 
     public float[] getScreen() {
         return NESPPU.screen;
+    }
+
+    public void pressStart() {
+        memoryManagementUnit.pressStart();
     }
 }

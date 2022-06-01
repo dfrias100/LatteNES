@@ -438,7 +438,7 @@ public class MOS6502 {
                 break;
             case REL:
                 debugPC += 2;
-                if ((operand1 & 0x80) > 0) {
+                if ((operand1 & 0x80) != 0) {
                     operand1 |= 0xFFFFFF00;
                 }
                 debugPC += operand1;
@@ -569,14 +569,15 @@ public class MOS6502 {
             // those instructions directly add to the
             // cycles variable based on the conditions
             // of the branch.
-            cycles += (result1 & result2) > 0 ? 1 : 0;
+            cycles += (result1 & result2) != 0 ? 1 : 0;
         }
         cyclesCount++;
         cycles--;
     } 
 
     private int fetch() {
-        if (opcodes.get(opcode).addressingMode != MOS6502AddressMode.IMP) {
+        MOS6502AddressMode mode = opcodes.get(opcode).addressingMode;
+        if (mode != MOS6502AddressMode.IMP && mode != MOS6502AddressMode.ACC) {
             fetchedVal = memory.readWord(absoluteAddress);
         }
         return fetchedVal;
@@ -646,7 +647,7 @@ public class MOS6502 {
         PC = memory.readWord(0xFFFC);
         PC |= (memory.readWord(0xFFFD) << 8);
 
-        SP = (byte) 0xFD;
+        SP = 0xFD;
         processorStatusWord = (byte) (0x00 | (byte) ProcessorStatusWordFlag.U.value);
         A = 0x00;
         X = 0x00;
@@ -874,7 +875,7 @@ public class MOS6502 {
     int REL() {
         relativeAddress = memory.readWord(PC++);
         PC = PC & 0xFFFF;
-        if ((relativeAddress & 0x80) > 0) {
+        if ((relativeAddress & 0x80) != 0) {
             relativeAddress |= 0xFFFFFF00;
         }
         return 0;
@@ -914,8 +915,8 @@ public class MOS6502 {
         // Positive + Positive = Negative is an overflow
         // so is Negative + Negative = Positive
         // Everything else is not an overflow
-        setFlag(ProcessorStatusWordFlag.V, ((~(A ^ fetchedVal) & (A ^ temp)) & 0x80) > 0);
-        setFlag(ProcessorStatusWordFlag.N, (temp & 0x80) > 0);
+        setFlag(ProcessorStatusWordFlag.V, ((~(A ^ fetchedVal) & (A ^ temp)) & 0x80) != 0);
+        setFlag(ProcessorStatusWordFlag.N, (temp & 0x80) != 0);
 
         // Store the result
         A = (short) (temp & 0xFF);
@@ -939,7 +940,7 @@ public class MOS6502 {
         A &= fetchedVal;
         A &= 0xFF;
         setFlag(ProcessorStatusWordFlag.Z, A == 0);
-        setFlag(ProcessorStatusWordFlag.N, (A & 0x80) > 0);
+        setFlag(ProcessorStatusWordFlag.N, (A & 0x80) != 0);
         return 1;
     }
 
@@ -959,11 +960,11 @@ public class MOS6502 {
     int ASL() {
         fetch();
 
-        setFlag(ProcessorStatusWordFlag.C, (fetchedVal & 0x80) > 0);
+        setFlag(ProcessorStatusWordFlag.C, (fetchedVal & 0x80) != 0);
         fetchedVal <<= 1;
         fetchedVal &= 0xFF;
         setFlag(ProcessorStatusWordFlag.Z, fetchedVal == 0);
-        setFlag(ProcessorStatusWordFlag.N, (fetchedVal & 0x80) > 0);
+        setFlag(ProcessorStatusWordFlag.N, (fetchedVal & 0x80) != 0);
 
         if (opcodes.get(opcode).addressingMode == MOS6502AddressMode.ACC) {
             A = (short) fetchedVal;
@@ -1071,8 +1072,8 @@ public class MOS6502 {
         fetch();
 
         setFlag(ProcessorStatusWordFlag.Z, (fetchedVal & A) == 0);
-        setFlag(ProcessorStatusWordFlag.N, (fetchedVal & 0x80) > 0);
-        setFlag(ProcessorStatusWordFlag.V, (fetchedVal & 0x40) > 0);
+        setFlag(ProcessorStatusWordFlag.N, (fetchedVal & 0x80) != 0);
+        setFlag(ProcessorStatusWordFlag.V, (fetchedVal & 0x40) != 0);
 
         return 0;
     }
@@ -1311,7 +1312,7 @@ public class MOS6502 {
 
         int result = (A - fetchedVal) & 0xFF;
         setFlag(ProcessorStatusWordFlag.Z, result == 0);
-        setFlag(ProcessorStatusWordFlag.N, (result & 0x80) > 0);
+        setFlag(ProcessorStatusWordFlag.N, (result & 0x80) != 0);
         setFlag(ProcessorStatusWordFlag.C, A >= fetchedVal);
 
         return 1;
@@ -1335,7 +1336,7 @@ public class MOS6502 {
 
         int result = (X - fetchedVal) & 0xFF;; 
         setFlag(ProcessorStatusWordFlag.Z, result == 0);
-        setFlag(ProcessorStatusWordFlag.N, (result & 0x80) > 0);
+        setFlag(ProcessorStatusWordFlag.N, (result & 0x80) != 0);
         setFlag(ProcessorStatusWordFlag.C, X >= fetchedVal);
 
         return 0;
@@ -1359,7 +1360,7 @@ public class MOS6502 {
 
         int result = (Y - fetchedVal) & 0xFF;; 
         setFlag(ProcessorStatusWordFlag.Z, result == 0);
-        setFlag(ProcessorStatusWordFlag.N, (result & 0x80) > 0);
+        setFlag(ProcessorStatusWordFlag.N, (result & 0x80) != 0);
         setFlag(ProcessorStatusWordFlag.C, Y >= fetchedVal);
 
         return 0;
@@ -1382,7 +1383,7 @@ public class MOS6502 {
         
         int result = (fetchedVal - 1) & 0xFF;
         setFlag(ProcessorStatusWordFlag.Z, result == 0);
-        setFlag(ProcessorStatusWordFlag.N, (result & 0x80) > 0);
+        setFlag(ProcessorStatusWordFlag.N, (result & 0x80) != 0);
         memory.writeWord(absoluteAddress, (byte) result);
         
         return 0;
@@ -1403,7 +1404,7 @@ public class MOS6502 {
     int DEX() {
         X = (short) ((X - 1) & 0xFF);
         setFlag(ProcessorStatusWordFlag.Z, X == 0);
-        setFlag(ProcessorStatusWordFlag.N, (X & 0x80) > 0);
+        setFlag(ProcessorStatusWordFlag.N, (X & 0x80) != 0);
         
         return 0;
     }
@@ -1423,7 +1424,7 @@ public class MOS6502 {
     int DEY() {
         Y = (short) ((Y - 1) & 0xFF);
         setFlag(ProcessorStatusWordFlag.Z, Y == 0);
-        setFlag(ProcessorStatusWordFlag.N, (Y & 0x80) > 0);
+        setFlag(ProcessorStatusWordFlag.N, (Y & 0x80) != 0);
         
         return 0;
     }
@@ -1445,7 +1446,7 @@ public class MOS6502 {
 
         A = (short) (A ^ fetchedVal);
         setFlag(ProcessorStatusWordFlag.Z, A == 0);
-        setFlag(ProcessorStatusWordFlag.N, (A & 0x80) > 0);
+        setFlag(ProcessorStatusWordFlag.N, (A & 0x80) != 0);
         
         return 1;
     }
@@ -1467,7 +1468,7 @@ public class MOS6502 {
         
         int result = (fetchedVal + 1) & 0xFF;
         setFlag(ProcessorStatusWordFlag.Z, result == 0);
-        setFlag(ProcessorStatusWordFlag.N, (result & 0x80) > 0);
+        setFlag(ProcessorStatusWordFlag.N, (result & 0x80) != 0);
         memory.writeWord(absoluteAddress, (byte) result);
         
         return 0;
@@ -1488,7 +1489,7 @@ public class MOS6502 {
     int INX() {
         X = (short) ((X + 1) & 0xFF);
         setFlag(ProcessorStatusWordFlag.Z, X == 0);
-        setFlag(ProcessorStatusWordFlag.N, (X & 0x80) > 0);
+        setFlag(ProcessorStatusWordFlag.N, (X & 0x80) != 0);
         
         return 0;
     }
@@ -1508,7 +1509,7 @@ public class MOS6502 {
     int INY() {
         Y = (short) ((Y + 1) & 0xFF);
         setFlag(ProcessorStatusWordFlag.Z, Y == 0);
-        setFlag(ProcessorStatusWordFlag.N, (Y & 0x80) > 0);
+        setFlag(ProcessorStatusWordFlag.N, (Y & 0x80) != 0);
         
         return 0;
     }
@@ -1571,7 +1572,7 @@ public class MOS6502 {
 
         A = (short) fetchedVal;
         setFlag(ProcessorStatusWordFlag.Z, A == 0);
-        setFlag(ProcessorStatusWordFlag.N, (A & 0x80) > 0);
+        setFlag(ProcessorStatusWordFlag.N, (A & 0x80) != 0);
 
         return 1;
     }
@@ -1593,7 +1594,7 @@ public class MOS6502 {
 
         X = (short) fetchedVal;
         setFlag(ProcessorStatusWordFlag.Z, X == 0);
-        setFlag(ProcessorStatusWordFlag.N, (X & 0x80) > 0);
+        setFlag(ProcessorStatusWordFlag.N, (X & 0x80) != 0);
 
         return 1;
     }
@@ -1615,7 +1616,7 @@ public class MOS6502 {
 
         Y = (short) fetchedVal;
         setFlag(ProcessorStatusWordFlag.Z, Y == 0);
-        setFlag(ProcessorStatusWordFlag.N, (Y & 0x80) > 0);
+        setFlag(ProcessorStatusWordFlag.N, (Y & 0x80) != 0);
 
         return 1;
     }
@@ -1635,7 +1636,7 @@ public class MOS6502 {
     int LSR() {
         fetch();
 
-        setFlag(ProcessorStatusWordFlag.C, (fetchedVal & 0x01) > 0);
+        setFlag(ProcessorStatusWordFlag.C, (fetchedVal & 0x01) != 0);
         fetchedVal >>= 1;
         setFlag(ProcessorStatusWordFlag.Z, fetchedVal == 0);
         setFlag(ProcessorStatusWordFlag.N, false);
@@ -1680,7 +1681,7 @@ public class MOS6502 {
 
         A |= fetchedVal;
         setFlag(ProcessorStatusWordFlag.Z, A == 0);
-        setFlag(ProcessorStatusWordFlag.N, (A & 0x80) > 0);
+        setFlag(ProcessorStatusWordFlag.N, (A & 0x80) != 0);
 
         return 1;
     }
@@ -1742,7 +1743,7 @@ public class MOS6502 {
         A = (short) memory.readWord(0x0100 + SP);
 
         setFlag(ProcessorStatusWordFlag.Z, A == 0);
-        setFlag(ProcessorStatusWordFlag.N, (A & 0x80) > 0);
+        setFlag(ProcessorStatusWordFlag.N, (A & 0x80) != 0);
 
         return 0;
     }
@@ -1782,9 +1783,9 @@ public class MOS6502 {
         fetch();
 
         temp = (fetchedVal << 1) | (getFlag(ProcessorStatusWordFlag.C) ? 1 : 0);
-        setFlag(ProcessorStatusWordFlag.C, (temp & 0x100) > 0);
+        setFlag(ProcessorStatusWordFlag.C, (temp & 0x100) != 0);
         setFlag(ProcessorStatusWordFlag.Z, (temp & 0xFF) == 0);
-        setFlag(ProcessorStatusWordFlag.N, (temp & 0x80) > 0);
+        setFlag(ProcessorStatusWordFlag.N, (temp & 0x80) != 0);
         if (opcodes.get(opcode).addressingMode == MOS6502AddressMode.ACC) {
             A = (short) (temp & 0xFF);
         } else {
@@ -1809,9 +1810,9 @@ public class MOS6502 {
         fetch();
 
         temp = (getFlag(ProcessorStatusWordFlag.C) ? (1 << 7) : 0) | (fetchedVal >> 1);
-        setFlag(ProcessorStatusWordFlag.C, (fetchedVal & 0x1) > 0);
+        setFlag(ProcessorStatusWordFlag.C, (fetchedVal & 0x1) != 0);
         setFlag(ProcessorStatusWordFlag.Z, (temp & 0xFF) == 0);
-        setFlag(ProcessorStatusWordFlag.N, (temp & 0x80) > 0);
+        setFlag(ProcessorStatusWordFlag.N, (temp & 0x80) != 0);
         if (opcodes.get(opcode).addressingMode == MOS6502AddressMode.ACC) {
             A = (short) (temp & 0xFF);
         } else {
@@ -1903,8 +1904,8 @@ public class MOS6502 {
         temp = A + val + (getFlag(ProcessorStatusWordFlag.C) ? 1 : 0);
         setFlag(ProcessorStatusWordFlag.C, temp > 255);
         setFlag(ProcessorStatusWordFlag.Z, (temp & 0xFF) == 0);
-        setFlag(ProcessorStatusWordFlag.V, ((~(A ^ val) & (A ^ temp)) & 0x80) > 0);
-        setFlag(ProcessorStatusWordFlag.N, (temp & 0x80) > 0);
+        setFlag(ProcessorStatusWordFlag.V, ((~(A ^ val) & (A ^ temp)) & 0x80) != 0);
+        setFlag(ProcessorStatusWordFlag.N, (temp & 0x80) != 0);
 
         A = (short) (temp & 0xFF);
 
@@ -2014,7 +2015,7 @@ public class MOS6502 {
     int TAX() {
         X = A;
         setFlag(ProcessorStatusWordFlag.Z, X == 0);
-        setFlag(ProcessorStatusWordFlag.N, (X & 0x80) > 0);
+        setFlag(ProcessorStatusWordFlag.N, (X & 0x80) != 0);
         return 0;
     }
 
@@ -2031,7 +2032,7 @@ public class MOS6502 {
     int TAY() {
         Y = A;
         setFlag(ProcessorStatusWordFlag.Z, Y == 0);
-        setFlag(ProcessorStatusWordFlag.N, (Y & 0x80) > 0);
+        setFlag(ProcessorStatusWordFlag.N, (Y & 0x80) != 0);
         return 0;
     }
 
@@ -2048,7 +2049,7 @@ public class MOS6502 {
     int TSX() {
         X = SP;
         setFlag(ProcessorStatusWordFlag.Z, X == 0);
-        setFlag(ProcessorStatusWordFlag.N, (X & 0x80) > 0);
+        setFlag(ProcessorStatusWordFlag.N, (X & 0x80) != 0);
         return 0;
     }
 
@@ -2065,7 +2066,7 @@ public class MOS6502 {
     int TXA() {
         A = X;
         setFlag(ProcessorStatusWordFlag.Z, A == 0);
-        setFlag(ProcessorStatusWordFlag.N, (A & 0x80) > 0);
+        setFlag(ProcessorStatusWordFlag.N, (A & 0x80) != 0);
         return 0;
     }
 
@@ -2097,7 +2098,7 @@ public class MOS6502 {
     int TYA() {
         A = Y;
         setFlag(ProcessorStatusWordFlag.Z, A == 0);
-        setFlag(ProcessorStatusWordFlag.N, (A & 0x80) > 0);
+        setFlag(ProcessorStatusWordFlag.N, (A & 0x80) != 0);
         return 0;
     }
 
