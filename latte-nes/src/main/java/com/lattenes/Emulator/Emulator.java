@@ -71,7 +71,7 @@ public class Emulator {
 
         long CPUclocks = NES.getCycleCount() / 3;
         double elapsedTime = endTime - startTime;
-        double MHz = CPUclocks / elapsedTime / 1000000.0;
+        double MHz = CPUclocks / (elapsedTime * 1000000.0);
         java.lang.System.out.println("CPU MHz: " + MHz);
 
         NES.endLog();
