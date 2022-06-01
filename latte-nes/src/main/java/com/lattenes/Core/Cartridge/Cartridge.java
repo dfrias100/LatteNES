@@ -22,6 +22,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.io.*;
 
+import com.lattenes.Core.Tuple;
 import com.lattenes.Core.Cartridge.Mapper.IMapper;
 import com.lattenes.Core.Cartridge.Mapper.Mapper0;
 

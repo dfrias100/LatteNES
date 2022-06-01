@@ -18,8 +18,8 @@
 
 package com.lattenes.Core.Cartridge.Mapper;
 
+import com.lattenes.Core.Tuple;
 import com.lattenes.Core.Cartridge.Mirror;
-import com.lattenes.Core.Cartridge.Tuple;
 
 public class Mapper0 implements IMapper {
     private int PRGBanks;

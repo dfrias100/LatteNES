@@ -53,7 +53,6 @@ package com.lattenes.Core;
 
 import com.lattenes.Core.Cartridge.Cartridge;
 import com.lattenes.Core.Cartridge.Mirror;
-import com.lattenes.Core.Cartridge.Tuple;
 
 public class PPU {
     private byte[] palletteTable;
