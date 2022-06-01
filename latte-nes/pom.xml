@@ -18,6 +18,13 @@
     <lwjgl.version>3.3.1</lwjgl.version>
   </properties>
 
+  <scm>
+    <connection>scm:git:${project.scm.url}</connection>
+    <developerConnection>scm:git:${project.scm.url}</developerConnection>
+    <url>git@github.com:dfrias100/LatteNES.git</url>
+    <tag>HEAD</tag>
+  </scm>
+
   <profiles>
     <profile>
       <id>lwjgl-natives-linux-amd64</id>
@@ -167,6 +174,12 @@
         <plugin>
           <artifactId>maven-project-info-reports-plugin</artifactId>
           <version>3.0.0</version>
+        </plugin>
+        <plugin>
+          <artifactId>maven-release-plugin</artifactId>
+          <version>XXX</version>
+          <configuration>
+          </configuration>
         </plugin>
       </plugins>
     </pluginManagement>
