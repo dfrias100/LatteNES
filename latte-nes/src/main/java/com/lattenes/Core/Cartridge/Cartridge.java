@@ -99,6 +99,7 @@ public class Cartridge {
             }
         } catch(IOException e) {
             e.printStackTrace();
+            java.lang.System.exit(-1);
         }
     }
 

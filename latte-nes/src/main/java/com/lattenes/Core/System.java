@@ -53,7 +53,22 @@ public class System {
         NESPPU.clock();
         
         if (systemCycleCount % 3 == 0) {
-            CPU.clock();
+            if (memoryManagementUnit.PPUReqDMA && CPU.doneProcessingInstruction()) {
+                boolean oddCycle = systemCycleCount % 2 == 1;
+                if (memoryManagementUnit.DMAWait) {
+                    if(!oddCycle) {
+                        memoryManagementUnit.DMAWait = false;
+                    }
+                } else {
+                    if (oddCycle) {
+                        memoryManagementUnit.readDMAAddr();
+                    } else {
+                        memoryManagementUnit.stepDMA();
+                    }
+                }
+            } else {
+                CPU.clock();
+            }    
         }
 
         systemCycleCount++;

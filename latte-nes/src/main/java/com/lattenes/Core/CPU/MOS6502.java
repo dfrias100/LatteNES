@@ -71,6 +71,10 @@ public class MOS6502 {
         }
     }
 
+    public boolean doneProcessingInstruction() {
+        return cycles == 0;
+    }
+
     void setFlag(ProcessorStatusWordFlag flag, boolean value) {
         if (value) {
             processorStatusWord |= flag.value;

@@ -50,11 +50,33 @@ public class Memory {
     public byte controller1;
     public byte controller2;
 
+    public boolean PPUReqDMA = false;
+    public boolean DMAWait = true;
+    public int DMAPage = 0;
+    public int DMAAddr = 0;
+    public byte DMAData = 0;
+
+    public int DMATicks = 0;
+
     public Memory(Cartridge cartridge, PPU NESPPU) {
         CPUMemory = new byte[RAM_SIZE];
         controllers = new byte[2];
         this.cartridge = cartridge;
         this.NESPPU = NESPPU;
+    }
+
+    public void stepDMA() {
+        NESPPU.OAMData[DMAAddr] = DMAData;
+        DMAAddr++;
+
+        if (DMAAddr == 256) {
+            PPUReqDMA = false;
+            DMAWait = true;
+        }
+    }
+
+    public void readDMAAddr() {
+        DMAData = (byte) readWord(DMAPage << 8 | DMAAddr);
     }
 
     public void writeWord(int address, byte value) {
@@ -67,6 +89,11 @@ public class Memory {
         } else if (address <= 0x3FFF) {
             // PPU access
             NESPPU.writeToPPUFromCPU(address, value);
+        } else if (address == 0x4014) {
+            DMAPage = value & 0xFF;
+            DMAAddr = 0;
+            DMATicks = 0;
+            PPUReqDMA = true;
         } else if (address == 0x4015) {
             // APU status write
         } else if (address == 0x4016 || address == 0x4017) {

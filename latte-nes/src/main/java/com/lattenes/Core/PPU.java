@@ -58,10 +58,11 @@ public class PPU {
     private byte[] palletteTable;
     private float[][] paletteColors;
     private byte[] vRAM;
-    private byte[] OAMData;
     private byte[] SecondaryOAMData;
     private int cycles;
     private int scanline;
+    private byte spritesOnScanline;
+    byte[] OAMData;
     float[] screen;
     boolean frameReady = false;
 
@@ -140,14 +141,17 @@ public class PPU {
     private boolean reqNMI = false;
     private boolean addressLatch = false;
 
+    private boolean sprite0HitPossible = false;
+    private boolean sprite0Rendering = false;
+
     private byte dataBuffer;
 
     // Data shifters
     private int backgroundShiftPatternLoByte = 0;
     private int backgroundShiftPatternHiByte = 0;
 
-    private int spriteShiftPatternLoByte = 0;
-    private int spriteShiftPatternHiByte = 0;
+    private short[] spriteShiftPatternLoByte;
+    private short[] spriteShiftPatternHiByte;
 
     private int backgroundShiftAttributeLoByte = 0;
     private int backgroundShiftAttributeHiByte = 0;
@@ -164,6 +168,8 @@ public class PPU {
         this.SecondaryOAMData = new byte[0x8 * 4];
         this.paletteColors = new float[0x40][3];
         this.screen = new float[256 * 240 * 4];
+        this.spriteShiftPatternLoByte = new short[8];
+        this.spriteShiftPatternHiByte = new short[8];
         this.cycles = 0;
         this.scanline = 0;
 
@@ -557,6 +563,13 @@ public class PPU {
 
         addressLatch = !addressLatch;
     }
+
+    private int flipBits(int dataByte) {
+        dataByte = (dataByte & 0xF0) >> 4 | (dataByte & 0x0F) << 4;
+        dataByte = (dataByte & 0xCC) >> 2 | (dataByte & 0x33) << 2;
+        dataByte = (dataByte & 0xAA) >> 1 | (dataByte & 0x55) << 1;
+        return dataByte;
+    }
  
     public byte readPPUFromCPU(int address) {
         byte data = 0x00;
@@ -579,7 +592,7 @@ public class PPU {
                 break;
             case 4: 
                 // OAM Data
-                //data = OAMData[OAMAddress];
+                data = OAMData[OAMAddress];
                 break;
             case 5:
                 // Scroll Register - cannot be read 
@@ -608,12 +621,12 @@ public class PPU {
         switch (address) {
             case 0:
                 // Control register
-                //byte nmiBefore = (byte) (((controlRegister & ControlRegisterEnum.NMI.value) >> 7) & 0b01);
+                byte nmiBefore = (byte) (((controlRegister & ControlRegisterEnum.NMI.value) >> 7) & 0b01);
                 controlRegister = value; 
-                //byte nmiAfter = (byte) (((controlRegister & ControlRegisterEnum.NMI.value) >> 7) & 0b01);
-                //if (nmiBefore == 0 && nmiAfter == 1 && inVblank) {
-                //    reqNMI = true;
-                //}
+                byte nmiAfter = (byte) (((controlRegister & ControlRegisterEnum.NMI.value) >> 7) & 0b01);
+                if (nmiBefore == 0 && nmiAfter == 1 && ((statusRegister & PPUStatusEnum.VerticalBlank.value) != 0)) {
+                    reqNMI = true;
+                }
                 // "Equivalently, bits 1 and 0 are the most significant bit of the scrolling 
                 //  coordinates (see Nametables and PPUSCROLL)"
                 // NESDEV says that bit 0 controls the x scroll, bit 1 controls the y scroll
@@ -631,11 +644,11 @@ public class PPU {
                 break;
             case 3: 
                 // OAM address
-                //OAMAddress = (short) (value & 0xFF);
+                OAMAddress = (short) (value & 0xFF);
                 break;
             case 4:
                 // OAM data 
-                //OAMData[OAMAddress] = value;
+                OAMData[OAMAddress] = value;
                 break;
             case 5:
                 // Scroll
@@ -759,7 +772,7 @@ public class PPU {
     }
 
     private void backgroundShift() {
-        if ((maskRegister & PPUMaskEnum.BGEnable.value) != 0 /*|| (maskRegister & PPUMaskEnum.SpriteEnable.value) != 0*/) {
+        if ((maskRegister & PPUMaskEnum.BGEnable.value) != 0) {
             backgroundShiftPatternLoByte <<= 1;
             backgroundShiftPatternHiByte <<= 1;
 
@@ -770,6 +783,24 @@ public class PPU {
             backgroundShiftPatternHiByte &= 0xFFFF;
             backgroundShiftAttributeLoByte &= 0xFFFF;
             backgroundShiftAttributeHiByte &= 0xFFFF;
+        }
+    }
+
+    private void spriteShift() {
+        if ((maskRegister & PPUMaskEnum.SpriteEnable.value) != 0 && cycles >= 1 && cycles < 258) {
+            for (int i = 0; i < spritesOnScanline; i++) {
+                int spriteX = SecondaryOAMData[i * 4 + 3] & 0xFF;
+                if (spriteX > 0) {
+                    spriteX--;
+                    SecondaryOAMData[i * 4 + 3] = (byte) spriteX;
+                } else {
+                    spriteShiftPatternLoByte[i] <<= 1;
+                    spriteShiftPatternHiByte[i] <<= 1;
+
+                    spriteShiftPatternLoByte[i] &= 0xFF;
+                    spriteShiftPatternHiByte[i] &= 0xFF;
+                }
+            }
         }
     }
 
@@ -834,13 +865,19 @@ public class PPU {
 
         if (scanline >= -1 && scanline < 240) {
             if (scanline == -1 && cycles == 1) {
-                //statusRegister &= ~PPUStatusEnum.Sprite0Hit.value;
-               // statusRegister &= ~PPUStatusEnum.SpriteOverflow.value;
+                statusRegister &= ~PPUStatusEnum.Sprite0Hit.value;
+                statusRegister &= ~PPUStatusEnum.SpriteOverflow.value;
                 statusRegister &= ~PPUStatusEnum.VerticalBlank.value;
+
+                for (int i = 0; i < 8; i++) {
+                    spriteShiftPatternLoByte[i] = 0;
+                    spriteShiftPatternHiByte[i] = 0;
+                }
             }
 
             if ((cycles >= 2 && cycles < 258) || (cycles >= 321 && cycles < 338)) {
                 backgroundShift();
+                spriteShift();
 
                 int readAddress, fineY;
                 switch ((cycles - 1) % 8) {
@@ -913,6 +950,99 @@ public class PPU {
                     VRAMAddress |= tempAddrInfo;
                 }
             }
+
+            // Sprite Rendering
+            if (cycles == 257 && scanline >= 0) {
+                for (int i = 0; i < 32; i++)
+                    SecondaryOAMData[i] = (byte) 0xFF;
+                spritesOnScanline = 0;
+
+                int spriteEntry = 0;
+                sprite0HitPossible = false;
+                while (spriteEntry < 64 && spritesOnScanline < 9) {
+                    int spriteY = OAMData[spriteEntry * 4] & 0xFF;
+                    int diff = scanline - spriteY;
+                    int spriteSize = (controlRegister & ControlRegisterEnum.SpriteSize.value) != 0 ? 16 : 8;
+
+                    if (diff >= 0 && diff < spriteSize) {
+                        if (spritesOnScanline < 8) {
+                            if (spriteEntry == 0) {
+                                sprite0HitPossible = true;
+                            }
+                            SecondaryOAMData[spritesOnScanline * 4] = OAMData[spriteEntry * 4];
+                            SecondaryOAMData[spritesOnScanline * 4 + 1] = OAMData[spriteEntry * 4 + 1];
+                            SecondaryOAMData[spritesOnScanline * 4 + 2] = OAMData[spriteEntry * 4 + 2];
+                            SecondaryOAMData[spritesOnScanline * 4 + 3] = OAMData[spriteEntry * 4 + 3];
+                        }
+                        spritesOnScanline++;
+                    }
+                    spriteEntry++;
+                }
+                statusRegister &= ~PPUStatusEnum.SpriteOverflow.value;
+                if (spritesOnScanline >= 8) {
+                    statusRegister |= PPUStatusEnum.SpriteOverflow.value;
+                    spritesOnScanline = 8;
+                }
+            }
+
+            if (cycles == 340) {
+                for (int i = 0; i < spritesOnScanline; i++) {
+                    int spritePatternBitLo, spritePatternBitHi;
+                    int spritePatternAddressLo, spritePatternAddressHi;
+
+                    byte spriteAttribute = SecondaryOAMData[i * 4 + 2];
+                    byte spriteID = SecondaryOAMData[i * 4 + 1];
+                    byte spriteY = SecondaryOAMData[i * 4];
+
+                    if ((controlRegister & ControlRegisterEnum.SpriteSize.value) == 0) {
+                        if ((spriteAttribute & 0x80) == 0) {
+                            spritePatternAddressLo = (controlRegister & ControlRegisterEnum.SpriteTable.value) != 0 ? 0x1000 : 0x0000;
+                            spritePatternAddressLo |= (spriteID & 0xFF) << 4;
+                            spritePatternAddressLo |= (scanline - (spriteY & 0xFF));
+                        } else { 
+                            spritePatternAddressLo = (controlRegister & ControlRegisterEnum.SpriteTable.value) != 0 ? 0x1000 : 0x0000;
+                            spritePatternAddressLo |= (spriteID & 0xFF) << 4;
+                            spritePatternAddressLo |= (7 - (scanline - (spriteY & 0xFF)));
+                        }
+                    } else {
+                        if ((spriteAttribute & 0x80) == 0) {
+                            if ((scanline - (spriteY & 0xFF)) < 8) {
+                                spritePatternAddressLo = (spriteID & 0x01) << 12;
+                                spritePatternAddressLo |= (spriteID & 0xFE) << 4;
+                                spritePatternAddressLo |= ((scanline - (spriteY & 0xFF)) & 0x07);
+                            } else {
+                                spritePatternAddressLo = (spriteID & 0x01) << 12;
+                                spritePatternAddressLo |= ((spriteID & 0xFE) + 1) << 4;
+                                spritePatternAddressLo |= ((scanline - (spriteY & 0xFF)) & 0x07);
+                            }
+                        } else { 
+                            if ((scanline - (spriteY & 0xFF)) < 8) {
+                                spritePatternAddressLo = (spriteID & 0x01) << 12;
+                                spritePatternAddressLo |= ((spriteID & 0xFE) + 1) << 4;
+                                spritePatternAddressLo |= (7 - ((scanline - (spriteY & 0xFF)) & 0x07));
+                            } else {
+                                spritePatternAddressLo = (spriteID & 0x01) << 12;
+                                spritePatternAddressLo |= ((spriteID & 0xFE)) << 4;
+                                spritePatternAddressLo |= (7 - ((scanline - (spriteY & 0xFF)) & 0x07));
+                            }
+                        }
+                    }
+
+                    spritePatternAddressHi = spritePatternAddressLo + 8;
+                    spritePatternAddressHi &= 0xFFFF;
+                    spritePatternBitLo = readFromPPUBus(spritePatternAddressLo) & 0xFF;
+                    spritePatternBitHi = readFromPPUBus(spritePatternAddressHi) & 0xFF;
+
+                    if ((spriteAttribute & 0x40) != 0) {
+                        spritePatternBitLo = flipBits(spritePatternBitLo);
+                        spritePatternBitHi = flipBits(spritePatternBitHi);
+                    }
+
+                    spriteShiftPatternLoByte[i] = (short) spritePatternBitLo;
+                    spriteShiftPatternHiByte[i] = (short) spritePatternBitHi;
+                }
+            }
+
         }
 
         if (scanline >= 241 && scanline < 261) {
@@ -928,7 +1058,7 @@ public class PPU {
         int backgroundPalette = 0;
 
         if ((maskRegister & PPUMaskEnum.BGEnable.value) != 0) {
-            //if ((maskRegister & PPUMaskEnum.BGLeftColEnable.value) != 0 || cycles >= 9) {
+            if ((maskRegister & PPUMaskEnum.BGLeftColEnable.value) != 0 || cycles >= 9) {
                 int bitMux = (0x8000 >> fineXScroll) & 0xFFFF;
                 int plane0Pixel = (backgroundShiftPatternLoByte & bitMux) != 0 ? 1 : 0;
                 int plane1Pixel = (backgroundShiftPatternHiByte & bitMux) != 0 ? 1 : 0;
@@ -937,13 +1067,77 @@ public class PPU {
                 int bgPaletteBit0 = (backgroundShiftAttributeLoByte & bitMux) != 0 ? 1 : 0;
                 int bgPaletteBit1 = (backgroundShiftAttributeHiByte & bitMux) != 0 ? 1 : 0;
                 backgroundPalette = bgPaletteBit0 | (bgPaletteBit1 << 1);
-            //} 
+            } 
+        }
+
+        int spritePixel = 0;
+        int spritePalette = 0;
+        int spritePriority = 0;
+
+        if ((maskRegister & PPUMaskEnum.SpriteEnable.value) != 0) {
+            sprite0Rendering = false;
+            for (int i = 0; i < spritesOnScanline; i++) {
+                if (SecondaryOAMData[i * 4 + 3] == 0) {
+                    int spritePixelLo = (spriteShiftPatternLoByte[i] & 0x80) != 0 ? 1 : 0;
+                    int spritePixelHi = (spriteShiftPatternHiByte[i] & 0x80) != 0 ? 1 : 0;
+                    spritePixel = spritePixelLo | (spritePixelHi << 1);
+
+                    spritePalette = (SecondaryOAMData[i * 4 + 2] & 0x03) + 4;
+                    spritePriority = (SecondaryOAMData[i * 4 + 2] & 0x20) == 0 ? 1 : 0;
+                    
+                    if (spritePixel != 0) {
+                        if (i == 0) {
+                            sprite0Rendering = true;
+                        }
+                        break;
+                    }
+                }
+            }
+        }
+
+        int finalPixel = 0;
+        int finalPalette = 0;
+
+        if (backgroundPixel == 0 && spritePixel == 0) {
+            // do nothing
+        } else if (backgroundPixel == 0 && spritePixel > 0) {
+            finalPixel = spritePixel;
+            finalPalette = spritePalette;
+        } else if (backgroundPixel > 0 && spritePixel == 0) {
+            finalPixel = backgroundPixel;
+            finalPalette = backgroundPalette;
+        } else {
+            if (spritePriority != 0) {
+                finalPixel = spritePixel;
+                finalPalette = spritePalette;
+            } else {
+                finalPixel = backgroundPixel;
+                finalPalette = backgroundPalette;
+            }
+
+            if (sprite0HitPossible && sprite0Rendering) {
+                boolean renderBackgroundEnabled = (maskRegister & PPUMaskEnum.BGEnable.value) != 0;
+                boolean renderSpritesEnabled = (maskRegister & PPUMaskEnum.SpriteEnable.value) != 0;
+                boolean backgroundLeft = (maskRegister & PPUMaskEnum.BGLeftColEnable.value) != 0;
+                boolean spriteLeft = (maskRegister & PPUMaskEnum.SpriteLeftColEnable.value) != 0;
+
+                if (renderBackgroundEnabled && renderSpritesEnabled) {
+                    if (!(backgroundLeft || spriteLeft)) {
+                        if (cycles >= 9 && cycles < 258) {
+                            statusRegister |= PPUStatusEnum.Sprite0Hit.value;
+                        }
+                    } else {
+                        if (cycles >= 1 && cycles < 258) {
+                            statusRegister |= PPUStatusEnum.Sprite0Hit.value;
+                        }
+                    }
+                }
+            }
         }
 
         float r, g, b;
 
-        //java.lang.System.out.println(readFromPPUBus(0x3f00 + (backgroundPalette << 2) + backgroundPixel) & 0x3F);
-        int colorIndex = readFromPPUBus(0x3F00 + (backgroundPalette << 2) + backgroundPixel) & 0x3F;
+        int colorIndex = readFromPPUBus(0x3F00 + (finalPalette << 2) + finalPixel) & 0x3F;
         float[] palette = paletteColors[colorIndex];
         r = palette[0];
         g = palette[1];
@@ -959,8 +1153,6 @@ public class PPU {
             if (scanline >= 261) {
                 scanline = -1;
                 frameReady = true;
-                //statusRegister &= ~PPUStatusEnum.Sprite0Hit.value;
-                //statusRegister &= ~PPUStatusEnum.VerticalBlank.value;
             }
         }
     }
