@@ -54,6 +54,7 @@ public class Memory {
     public boolean DMAWait = true;
     public int DMAPage = 0;
     public int DMAAddr = 0;
+    public int OAMAddr = 0;
     public byte DMAData = 0;
 
     public int DMATicks = 0;
@@ -66,10 +67,12 @@ public class Memory {
     }
 
     public void stepDMA() {
-        NESPPU.OAMData[DMAAddr] = DMAData;
+        NESPPU.OAMData[OAMAddr] = DMAData;
+        OAMAddr = (OAMAddr + 1) & 0xFF;
         DMAAddr++;
+        DMATicks++;
 
-        if (DMAAddr == 256) {
+        if (DMATicks == 256) {
             PPUReqDMA = false;
             DMAWait = true;
         }
@@ -91,6 +94,7 @@ public class Memory {
             NESPPU.writeToPPUFromCPU(address, value);
         } else if (address == 0x4014) {
             DMAPage = value & 0xFF;
+            OAMAddr = NESPPU.OAMAddress;
             DMAAddr = 0;
             DMATicks = 0;
             PPUReqDMA = true;

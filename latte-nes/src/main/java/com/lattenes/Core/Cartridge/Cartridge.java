@@ -84,7 +84,12 @@ public class Cartridge {
             }
 
             prgMEM = new ArrayList<Byte>(Collections.nCopies(PRGBanks * 0x4000, (byte) 0));
-            chrMEM = new ArrayList<Byte>(Collections.nCopies(CHRBanks * 0x2000, (byte) 0));
+            if (CHRBanks > 0) {
+                chrMEM = new ArrayList<Byte>(Collections.nCopies(CHRBanks * 0x2000, (byte) 0));
+            } else {
+                chrMEM = new ArrayList<Byte>(Collections.nCopies(0x2000, (byte) 0));
+            }
+            
 
             while (i < prgMEM.size() && (byteRead = inputStream.read()) != -1) {
                 prgMEM.set(i, (byte) byteRead);

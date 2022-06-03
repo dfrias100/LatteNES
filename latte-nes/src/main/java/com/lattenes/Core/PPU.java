@@ -54,6 +54,8 @@ package com.lattenes.Core;
 import com.lattenes.Core.Cartridge.Cartridge;
 import com.lattenes.Core.Cartridge.Mirror;
 
+import java.util.EnumSet;
+
 public class PPU {
     private byte[] palletteTable;
     private float[][] paletteColors;
@@ -129,15 +131,42 @@ public class PPU {
         }
     }
 
-    private byte controlRegister = 0x00;
-    private byte statusRegister = 0x00;
-    private byte maskRegister = 0x00;
+    private EnumSet<PPUStatusEnum> statusRegister = EnumSet.noneOf(PPUStatusEnum.class);
+    private EnumSet<PPUMaskEnum> maskRegister = EnumSet.noneOf(PPUMaskEnum.class);
+    private EnumSet<ControlRegisterEnum> controlRegister = EnumSet.noneOf(ControlRegisterEnum.class);
+    
+    private void byteToMaskEnumSet(byte value) {
+        maskRegister.clear();
+        for (PPUMaskEnum maskEnum : PPUMaskEnum.values()) {
+            if ((value & maskEnum.value) == maskEnum.value) {
+                maskRegister.add(maskEnum);
+            }
+        }
+    }
+
+    private void byteToControlEnumSet(byte value) {
+        controlRegister.clear();
+        for (ControlRegisterEnum controlEnum : ControlRegisterEnum.values()) {
+            if ((value & controlEnum.value) == controlEnum.value) {
+                controlRegister.add(controlEnum);
+            }
+        }
+    }
+
+    private byte statusEnumSetToByte() {
+        byte result = 0x00;
+        for (PPUStatusEnum statusEnum : statusRegister) {
+            result |= statusEnum.value;
+        }
+        return result;
+    }
+
 
     private int VRAMAddress = 0x00;
-     int TRAMAddress = 0x00;
+    private int TRAMAddress = 0x00;
 
     private short fineXScroll = 0;
-    private short OAMAddress = 0;
+    short OAMAddress = 0;
     private boolean reqNMI = false;
     private boolean addressLatch = false;
 
@@ -455,45 +484,8 @@ public class PPU {
         }
     }
 
-    private void showTile(int bank, int tile, int startX, int startY) {
-        bank *= 0x1000; 
-        for (int y = 0; y < 8; y++) {
-            byte upper = readFromPPUBus(bank + tile * 16 + y);
-            byte lower = readFromPPUBus(bank + tile * 16 + y + 8);
-            for (int x = 7; x >= 0; x--) {
-                int val = (1 & upper) << 1 | (1 & lower);
-                upper >>= 1;
-                lower >>= 1;
-                float r = 0.0f, g = 0.0f, b = 0.0f;
-                switch (val) {
-                    case 0:
-                        r = paletteColors[0x00][0];
-                        g = paletteColors[0x00][1];
-                        b = paletteColors[0x00][2];
-                        break;
-                    case 1:
-                        r = paletteColors[0x10][0];
-                        g = paletteColors[0x10][1];
-                        b = paletteColors[0x10][2];
-                        break;
-                    case 2:
-                        r = paletteColors[0x20][0];
-                        g = paletteColors[0x20][1];
-                        b = paletteColors[0x20][2];
-                        break;
-                    case 3:
-                        r = paletteColors[0x30][0];
-                        g = paletteColors[0x30][1];
-                        b = paletteColors[0x30][2];
-                        break;
-                }
-                setPixel(startX + x, startY + y, r, g, b);
-            }
-        }
-    }
-
     private short getIncrement() {
-        if ((controlRegister & ControlRegisterEnum.Increment.value) == 0) {
+        if (!controlRegister.contains(ControlRegisterEnum.Increment)) {
             return 1;
         } else {
             return 32;
@@ -528,37 +520,25 @@ public class PPU {
         if (!addressLatch) {
             fineXScroll = (short) (value & 0x07);
             int coarseXScroll = value & 0xFF;
+
             coarseXScroll >>= 3;
             coarseXScroll &= VRAMAddressEnum.CoarseXScroll.value;
-            TRAMAddress = (TRAMAddress  & (
-                        VRAMAddressEnum.Unused.value        | 
-                        VRAMAddressEnum.FineYScroll.value   |
-                        VRAMAddressEnum.NametableSel.value  |
-                        VRAMAddressEnum.CoarseYScroll.value 
-                        // Coarse X Scroll
-                    )) | coarseXScroll;
+
+            TRAMAddress &= ~VRAMAddressEnum.CoarseXScroll.value;
+            TRAMAddress |= coarseXScroll;
         } else {
             int fineYScroll = value & 0x07;
             fineYScroll <<= 12;
-            TRAMAddress = (TRAMAddress & (
-                        VRAMAddressEnum.Unused.value        | 
-                        // Fine Y Scroll
-                        VRAMAddressEnum.NametableSel.value  |
-                        VRAMAddressEnum.CoarseYScroll.value |
-                        VRAMAddressEnum.CoarseXScroll.value 
-                    )) | fineYScroll;
+
+            TRAMAddress &= ~VRAMAddressEnum.FineYScroll.value;
+            TRAMAddress |= fineYScroll;
 
             int coarseYScroll = value & 0xFF;
-            coarseYScroll >>= 3;
-            coarseYScroll <<= 5;
+            coarseYScroll <<= 2;
             coarseYScroll &= VRAMAddressEnum.CoarseYScroll.value;
-            TRAMAddress = (TRAMAddress & (
-                        VRAMAddressEnum.Unused.value        | 
-                        VRAMAddressEnum.FineYScroll.value   |
-                        VRAMAddressEnum.NametableSel.value  |
-                        // Coarse Y Scroll
-                        VRAMAddressEnum.CoarseXScroll.value 
-                    )) | coarseYScroll;
+
+            TRAMAddress &= ~VRAMAddressEnum.CoarseYScroll.value;
+            TRAMAddress |= coarseYScroll;
         }
 
         addressLatch = !addressLatch;
@@ -583,8 +563,8 @@ public class PPU {
                 break;
             case 2:
                 // Status register
-                data = statusRegister;
-                statusRegister &= ~PPUStatusEnum.VerticalBlank.value;
+                data = statusEnumSetToByte();
+                statusRegister.remove(PPUStatusEnum.VerticalBlank);
                 addressLatch = false;
                 break;
             case 3:
@@ -621,23 +601,23 @@ public class PPU {
         switch (address) {
             case 0:
                 // Control register
-                byte nmiBefore = (byte) (((controlRegister & ControlRegisterEnum.NMI.value) >> 7) & 0b01);
-                controlRegister = value; 
-                byte nmiAfter = (byte) (((controlRegister & ControlRegisterEnum.NMI.value) >> 7) & 0b01);
-                if (nmiBefore == 0 && nmiAfter == 1 && ((statusRegister & PPUStatusEnum.VerticalBlank.value) != 0)) {
+                boolean nmiBefore = controlRegister.contains(ControlRegisterEnum.NMI);
+                byteToControlEnumSet(value);
+                boolean nmiAfter = controlRegister.contains(ControlRegisterEnum.NMI);
+                if (!nmiBefore && nmiAfter && statusRegister.contains(PPUStatusEnum.VerticalBlank)) {
                     reqNMI = true;
                 }
                 // "Equivalently, bits 1 and 0 are the most significant bit of the scrolling 
                 //  coordinates (see Nametables and PPUSCROLL)"
                 // NESDEV says that bit 0 controls the x scroll, bit 1 controls the y scroll
-                int nametableSel = controlRegister & 0b0011;
+                int nametableSel = value & 0b0011;
                 nametableSel <<= 10;
                 TRAMAddress &= ~VRAMAddressEnum.NametableSel.value;
                 TRAMAddress |= nametableSel;
                 break;
             case 1:
                 // Mask register
-                maskRegister = value;
+                byteToMaskEnumSet(value);
                 break;
             case 2:
                 // Status register - can't write to this register
@@ -649,6 +629,8 @@ public class PPU {
             case 4:
                 // OAM data 
                 OAMData[OAMAddress] = value;
+                OAMAddress++;
+                OAMAddress &= 0xFF;
                 break;
             case 5:
                 // Scroll
@@ -772,7 +754,7 @@ public class PPU {
     }
 
     private void backgroundShift() {
-        if ((maskRegister & PPUMaskEnum.BGEnable.value) != 0) {
+        if (maskRegister.contains(PPUMaskEnum.BGEnable)) {
             backgroundShiftPatternLoByte <<= 1;
             backgroundShiftPatternHiByte <<= 1;
 
@@ -787,7 +769,7 @@ public class PPU {
     }
 
     private void spriteShift() {
-        if ((maskRegister & PPUMaskEnum.SpriteEnable.value) != 0 && cycles >= 1 && cycles < 258) {
+        if (maskRegister.contains(PPUMaskEnum.SpriteEnable) && cycles >= 1 && cycles < 258) {
             for (int i = 0; i < spritesOnScanline; i++) {
                 int spriteX = SecondaryOAMData[i * 4 + 3] & 0xFF;
                 if (spriteX > 0) {
@@ -813,7 +795,7 @@ public class PPU {
     }
 
     private void incrementXScroll() {
-        if ((maskRegister & PPUMaskEnum.BGEnable.value) != 0 || (maskRegister & PPUMaskEnum.SpriteEnable.value) != 0) {
+        if (maskRegister.contains(PPUMaskEnum.BGEnable) || maskRegister.contains(PPUMaskEnum.SpriteEnable)) {
             int coarseX = (VRAMAddress & VRAMAddressEnum.CoarseXScroll.value);
             if (coarseX == 31) {
                 VRAMAddress &= ~VRAMAddressEnum.CoarseXScroll.value;
@@ -832,7 +814,7 @@ public class PPU {
     }
 
     private void incrementYScroll() {
-        if ((maskRegister & PPUMaskEnum.BGEnable.value) != 0 || (maskRegister & PPUMaskEnum.SpriteEnable.value) != 0) {
+        if (maskRegister.contains(PPUMaskEnum.BGEnable) || maskRegister.contains(PPUMaskEnum.SpriteEnable)) {
             int fineY = (VRAMAddress & VRAMAddressEnum.FineYScroll.value) >> 12;
             if (fineY < 7) {
                 fineY++;
@@ -865,9 +847,9 @@ public class PPU {
 
         if (scanline >= -1 && scanline < 240) {
             if (scanline == -1 && cycles == 1) {
-                statusRegister &= ~PPUStatusEnum.Sprite0Hit.value;
-                statusRegister &= ~PPUStatusEnum.SpriteOverflow.value;
-                statusRegister &= ~PPUStatusEnum.VerticalBlank.value;
+                statusRegister.remove(PPUStatusEnum.Sprite0Hit);
+                statusRegister.remove(PPUStatusEnum.SpriteOverflow);
+                statusRegister.remove(PPUStatusEnum.VerticalBlank);
 
                 for (int i = 0; i < 8; i++) {
                     spriteShiftPatternLoByte[i] = 0;
@@ -886,35 +868,57 @@ public class PPU {
                         bgNextTileID = readFromPPUBus(0x2000 | (VRAMAddress & 0xFFF)) & 0xFF;
                         break;
                     case 2:
+                        // Starting address is at 0b0010001111000000
                         readAddress = 0x23C0;
-                        int nametable = (VRAMAddress & VRAMAddressEnum.NametableSel.value) >> 10;
+
+                        // Get nametable, this is already at the correct bit position
+                        int nametable = (VRAMAddress & VRAMAddressEnum.NametableSel.value);
+                        // Take coarse Y and coarse X from VRAM address, shift coarseY by 5 to test their bits
                         int coarseY = (VRAMAddress & VRAMAddressEnum.CoarseYScroll.value) >> 5;
                         int coarseX = VRAMAddress & VRAMAddressEnum.CoarseXScroll.value;
 
+                        // Check the bits to get the appropriate attribute
                         boolean coarseYBit1 = (coarseY & 0x2) != 0;
                         boolean coarseXBit1 = (coarseX & 0x2) != 0;
 
-                        coarseY >>= 2;
-                        coarseX >>=2;
+                        // Now we shift the bits to get the correct address,
+                        // we take the most significant 3 bits of the coarseX and coarseY
 
-                        readAddress = readAddress | (nametable << 10) | (coarseY << 3) | coarseX;
+                        // Say coarseY is 0b11111
+                        // shift by 1 is 0b111110
+                        coarseY <<= 1;
+
+                        // Take the 3 most significant bits of coarseY and now its
+                        // 0b111000 and in the correct position of the final address
+                        coarseY &= 0b111000;
+
+                        // Shift right by 2 to get it down to a 3 bit number
+                        coarseX >>= 2;
+
+                        // ORing these variables together we get 0b0010NM1111YYYXXX as
+                        // the final address to read from the PPU bus
+                        readAddress = readAddress | nametable | coarseY | coarseX;
                         bgNextTileAttributes = readFromPPUBus(readAddress) & 0xFF;
 
+                        // Depending on the coarseX and Y bits we need to shift the
+                        // attribute bits to the correct attribute
                         if (coarseYBit1) bgNextTileAttributes >>= 4;
                         if (coarseXBit1) bgNextTileAttributes >>= 2;
                         bgNextTileAttributes &= 0x03;
                         break;
                     case 4:
-                        readAddress = (controlRegister & ControlRegisterEnum.BackgroundTable.value) >> 4;
+                        readAddress = controlRegister.contains(ControlRegisterEnum.BackgroundTable) ? 0x1000 : 0x0000;
                         fineY = (VRAMAddress & VRAMAddressEnum.FineYScroll.value) >> 12;
+                        readAddress = readAddress + bgNextTileID * 16 + fineY;
                         bgNextTile &= ~0x00FF;
-                        bgNextTile |= (readFromPPUBus((readAddress << 12) + bgNextTileID * 16 + fineY) & 0xFF);
+                        bgNextTile |= (readFromPPUBus(readAddress) & 0xFF);
                         break;
                     case 6:
-                        readAddress = (controlRegister & ControlRegisterEnum.BackgroundTable.value) >> 4;
+                        readAddress = controlRegister.contains(ControlRegisterEnum.BackgroundTable) ? 0x1000 : 0x0000;
                         fineY = (VRAMAddress & VRAMAddressEnum.FineYScroll.value) >> 12;
+                        readAddress = readAddress + bgNextTileID * 16 + fineY + 8;
                         bgNextTile &= ~0xFF00;
-                        bgNextTile |= (readFromPPUBus((readAddress << 12) + bgNextTileID * 16 + fineY + 8) & 0xFF) << 8;
+                        bgNextTile |= (readFromPPUBus(readAddress) & 0xFF) << 8;
                         break;
                     case 7:
                         incrementXScroll();
@@ -929,7 +933,7 @@ public class PPU {
             if (cycles == 257) {
                 loadBG();
                 
-                if ((maskRegister & PPUMaskEnum.BGEnable.value) != 0 || (maskRegister & PPUMaskEnum.SpriteEnable.value) != 0) {
+                if (maskRegister.contains(PPUMaskEnum.BGEnable) || maskRegister.contains(PPUMaskEnum.SpriteEnable)) {
                     int tempAddrInfo = TRAMAddress & (VRAMAddressEnum.CoarseXScroll.value 
                                                     | 0x400);
                     VRAMAddress &= ~(VRAMAddressEnum.CoarseXScroll.value | 0x400);
@@ -942,7 +946,7 @@ public class PPU {
             }
 
             if (scanline == -1 && cycles >= 280 && cycles < 305) {
-                if ((maskRegister & PPUMaskEnum.BGEnable.value) != 0 || (maskRegister & PPUMaskEnum.SpriteEnable.value) != 0) {
+                if (maskRegister.contains(PPUMaskEnum.BGEnable) || maskRegister.contains(PPUMaskEnum.SpriteEnable)) {
                     int tempAddrInfo = TRAMAddress & (VRAMAddressEnum.CoarseYScroll.value 
                                                     | VRAMAddressEnum.FineYScroll.value
                                                     | 0x800);
@@ -962,7 +966,7 @@ public class PPU {
                 while (spriteEntry < 64 && spritesOnScanline < 9) {
                     int spriteY = OAMData[spriteEntry * 4] & 0xFF;
                     int diff = scanline - spriteY;
-                    int spriteSize = (controlRegister & ControlRegisterEnum.SpriteSize.value) != 0 ? 16 : 8;
+                    int spriteSize = controlRegister.contains(ControlRegisterEnum.SpriteSize) ? 16 : 8;
 
                     if (diff >= 0 && diff < spriteSize) {
                         if (spritesOnScanline < 8) {
@@ -978,9 +982,9 @@ public class PPU {
                     }
                     spriteEntry++;
                 }
-                statusRegister &= ~PPUStatusEnum.SpriteOverflow.value;
+                statusRegister.remove(PPUStatusEnum.SpriteOverflow);
                 if (spritesOnScanline >= 8) {
-                    statusRegister |= PPUStatusEnum.SpriteOverflow.value;
+                    statusRegister.add(PPUStatusEnum.SpriteOverflow);
                     spritesOnScanline = 8;
                 }
             }
@@ -994,36 +998,30 @@ public class PPU {
                     byte spriteID = SecondaryOAMData[i * 4 + 1];
                     byte spriteY = SecondaryOAMData[i * 4];
 
-                    if ((controlRegister & ControlRegisterEnum.SpriteSize.value) == 0) {
+                    
+                    if (!controlRegister.contains(ControlRegisterEnum.SpriteSize)) {
+                        spritePatternAddressLo = controlRegister.contains(ControlRegisterEnum.SpriteSize) ? 0x1000 : 0x0000;
+                        spritePatternAddressLo |= (spriteID & 0xFF) << 4;
                         if ((spriteAttribute & 0x80) == 0) {
-                            spritePatternAddressLo = (controlRegister & ControlRegisterEnum.SpriteTable.value) != 0 ? 0x1000 : 0x0000;
-                            spritePatternAddressLo |= (spriteID & 0xFF) << 4;
                             spritePatternAddressLo |= (scanline - (spriteY & 0xFF));
                         } else { 
-                            spritePatternAddressLo = (controlRegister & ControlRegisterEnum.SpriteTable.value) != 0 ? 0x1000 : 0x0000;
-                            spritePatternAddressLo |= (spriteID & 0xFF) << 4;
                             spritePatternAddressLo |= (7 - (scanline - (spriteY & 0xFF)));
                         }
                     } else {
+                        spritePatternAddressLo = (spriteID & 0x01) << 12;
                         if ((spriteAttribute & 0x80) == 0) {
+                            spritePatternAddressLo |= ((scanline - (spriteY & 0xFF)) & 0x07);
                             if ((scanline - (spriteY & 0xFF)) < 8) {
-                                spritePatternAddressLo = (spriteID & 0x01) << 12;
                                 spritePatternAddressLo |= (spriteID & 0xFE) << 4;
-                                spritePatternAddressLo |= ((scanline - (spriteY & 0xFF)) & 0x07);
                             } else {
-                                spritePatternAddressLo = (spriteID & 0x01) << 12;
                                 spritePatternAddressLo |= ((spriteID & 0xFE) + 1) << 4;
-                                spritePatternAddressLo |= ((scanline - (spriteY & 0xFF)) & 0x07);
                             }
                         } else { 
-                            if ((scanline - (spriteY & 0xFF)) < 8) {
-                                spritePatternAddressLo = (spriteID & 0x01) << 12;
+                            spritePatternAddressLo |= (7 - ((scanline - (spriteY & 0xFF)) & 0x07));
+                            if ((scanline - (spriteY & 0xFF)) < 8) {    
                                 spritePatternAddressLo |= ((spriteID & 0xFE) + 1) << 4;
-                                spritePatternAddressLo |= (7 - ((scanline - (spriteY & 0xFF)) & 0x07));
                             } else {
-                                spritePatternAddressLo = (spriteID & 0x01) << 12;
                                 spritePatternAddressLo |= ((spriteID & 0xFE)) << 4;
-                                spritePatternAddressLo |= (7 - ((scanline - (spriteY & 0xFF)) & 0x07));
                             }
                         }
                     }
@@ -1047,8 +1045,8 @@ public class PPU {
 
         if (scanline >= 241 && scanline < 261) {
             if (scanline == 241 && cycles == 1) {
-                statusRegister |= PPUStatusEnum.VerticalBlank.value;             
-                if ((controlRegister & ControlRegisterEnum.NMI.value) != 0) {
+                statusRegister.add(PPUStatusEnum.VerticalBlank);
+                if (controlRegister.contains(ControlRegisterEnum.NMI)) {
                     reqNMI = true;
                 }
             }
@@ -1057,8 +1055,8 @@ public class PPU {
         int backgroundPixel = 0;
         int backgroundPalette = 0;
 
-        if ((maskRegister & PPUMaskEnum.BGEnable.value) != 0) {
-            if ((maskRegister & PPUMaskEnum.BGLeftColEnable.value) != 0 || cycles >= 9) {
+        if (maskRegister.contains(PPUMaskEnum.BGEnable)) {
+            if (maskRegister.contains(PPUMaskEnum.BGLeftColEnable) || cycles >= 9) {
                 int bitMux = (0x8000 >> fineXScroll) & 0xFFFF;
                 int plane0Pixel = (backgroundShiftPatternLoByte & bitMux) != 0 ? 1 : 0;
                 int plane1Pixel = (backgroundShiftPatternHiByte & bitMux) != 0 ? 1 : 0;
@@ -1074,7 +1072,7 @@ public class PPU {
         int spritePalette = 0;
         int spritePriority = 0;
 
-        if ((maskRegister & PPUMaskEnum.SpriteEnable.value) != 0) {
+        if (maskRegister.contains(PPUMaskEnum.SpriteEnable)) {
             sprite0Rendering = false;
             for (int i = 0; i < spritesOnScanline; i++) {
                 if (SecondaryOAMData[i * 4 + 3] == 0) {
@@ -1116,19 +1114,19 @@ public class PPU {
             }
 
             if (sprite0HitPossible && sprite0Rendering) {
-                boolean renderBackgroundEnabled = (maskRegister & PPUMaskEnum.BGEnable.value) != 0;
-                boolean renderSpritesEnabled = (maskRegister & PPUMaskEnum.SpriteEnable.value) != 0;
-                boolean backgroundLeft = (maskRegister & PPUMaskEnum.BGLeftColEnable.value) != 0;
-                boolean spriteLeft = (maskRegister & PPUMaskEnum.SpriteLeftColEnable.value) != 0;
+                boolean renderBackgroundEnabled = maskRegister.contains(PPUMaskEnum.BGEnable);
+                boolean renderSpritesEnabled = maskRegister.contains(PPUMaskEnum.SpriteEnable);
+                boolean backgroundLeft = maskRegister.contains(PPUMaskEnum.BGLeftColEnable);
+                boolean spriteLeft = maskRegister.contains(PPUMaskEnum.SpriteLeftColEnable);
 
                 if (renderBackgroundEnabled && renderSpritesEnabled) {
                     if (!(backgroundLeft || spriteLeft)) {
                         if (cycles >= 9 && cycles < 258) {
-                            statusRegister |= PPUStatusEnum.Sprite0Hit.value;
+                            statusRegister.add(PPUStatusEnum.Sprite0Hit);
                         }
                     } else {
                         if (cycles >= 1 && cycles < 258) {
-                            statusRegister |= PPUStatusEnum.Sprite0Hit.value;
+                            statusRegister.add(PPUStatusEnum.Sprite0Hit);
                         }
                     }
                 }
