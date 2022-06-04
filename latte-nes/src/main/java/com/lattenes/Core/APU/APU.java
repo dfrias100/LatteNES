@@ -18,8 +18,6 @@
 
 package com.lattenes.Core.APU;
 
-import com.lattenes.Emulator.EmulatorAudio;
-
 public class APU {
     private long cycles = 0;
 
@@ -35,20 +33,30 @@ public class APU {
     private Envelope pulse2Envelope;
     private WaveSampler pulse2Synth;
 
-    private NoiseSequcencer noiseSeq;
+    private NoiseSequencer noiseSeq;
     private ChannelLengthCounter noiseLengthCtr;
     private Envelope noiseEnvelope;
+
+    private TriangleSequencer triangleSeq;
+    private ChannelLengthCounter triangleLengthCtr;
+    private LinearCounter triangleLinearCtr;
+    private WaveSampler triangleSynth;
 
     private long frameCount = 0;
     private double pulse1Intermediate = 0;
     private double pulse2Intermediate = 0;
+    private double triangleIntermediate = 0;
     private double pulse1Sample = 0;
     private double pulse2Sample = 0;
     private double noiseSample = 0;
+    private double triangleSample = 0;
     private double globalTime = 0;
     private boolean pulse1ChanEnabled = true;
     private boolean pulse2ChanEnabled = true;
     private boolean noiseChanEnabled = true;
+    private boolean triangleChanEnabled = true;
+
+    private boolean fiveStep = false;
 
     private final short lengthTable[] = { 
         10, 254, 20, 2, 40, 4, 80, 6,
@@ -70,9 +78,14 @@ public class APU {
         pulse2Envelope = new Envelope();
         pulse2Synth = new WaveSampler();
 
-        noiseSeq = new NoiseSequcencer();
+        noiseSeq = new NoiseSequencer();
         noiseLengthCtr = new ChannelLengthCounter();
         noiseEnvelope = new Envelope();
+
+        triangleSeq = new TriangleSequencer();
+        triangleLengthCtr = new ChannelLengthCounter();
+        triangleLinearCtr = new LinearCounter();
+        triangleSynth = new WaveSampler();
 
         pulse1Sweep.pulseSeq = pulse1Seq;
         pulse2Sweep.pulseSeq = pulse2Seq;
@@ -161,6 +174,18 @@ public class APU {
                 pulse2Envelope.start = true;
                 break;
             case 0x4008:
+                triangleLengthCtr.halt = (value & 0x80) == 0x80;
+                triangleLinearCtr.controlFlag = (value & 0x80) == 0x80;
+                triangleLinearCtr.reload = (short) (value & 0x7F);
+                break;
+            case 0x400A:
+                triangleSeq.reload = (triangleSeq.reload & 0xFF00) | (value & 0xFF);
+                break;
+            case 0x400B:
+                triangleSeq.reload = (triangleSeq.reload & 0x00FF) | ((value & 0x07) << 8);
+                triangleSeq.timer = triangleSeq.reload;
+                triangleLengthCtr.counter = lengthTable[(value & 0xF8) >> 3];
+                triangleLinearCtr.reloadTimer = true;
                 break;
             case 0x400C:
                 noiseLengthCtr.halt = (value & 0x20) == 0x20;
@@ -190,13 +215,22 @@ public class APU {
             case 0x4015:
                 pulse1ChanEnabled = (value & 0x01) == 0x01;
                 pulse2ChanEnabled = (value & 0x02) == 0x02;
-                noiseChanEnabled = (value & 0x04) == 0x04;
+                triangleChanEnabled = (value & 0x04) == 0x04;
+                noiseChanEnabled = (value & 0x08) == 0x08;
+
+                if (!pulse1ChanEnabled) pulse1LengthCtr.counter = 0;
+                if (!pulse2ChanEnabled) pulse2LengthCtr.counter = 0;
+                if (!noiseChanEnabled) noiseLengthCtr.counter = 0;
+                if (!triangleChanEnabled) triangleLengthCtr.counter = 0;
                 break;
             case 0x400F:
                 pulse1Envelope.start = true;
                 pulse2Envelope.start = true;
                 noiseEnvelope.start = true;
                 noiseLengthCtr.counter = lengthTable[(value & 0xF8) >> 3];
+                break;
+            case 0x4017:
+                fiveStep = (value & 0x80) == 0x80;
                 break;
         }
     }
@@ -209,34 +243,68 @@ public class APU {
         if (cycles % 6 == 0) {
             frameCount++;
 
-            if (frameCount == 3729) {
-                quarterFrame = true;
-            }
+            if (!fiveStep) {
+                if (frameCount == 3729) {
+                    quarterFrame = true;
+                }
 
-            if (frameCount == 7457) {
-                halfFrame = true;
-                quarterFrame = true;
-            }
+                if (frameCount == 7457) {
+                    halfFrame = true;
+                    quarterFrame = true;
+                }
 
-            if (frameCount == 11186) {
-                quarterFrame = true;
-            }
+                if (frameCount == 11186) {
+                    quarterFrame = true;
+                }
 
-            if (frameCount == 14916) {
-                halfFrame = true;
-                quarterFrame = true;
-                frameCount = 0;
+                if (frameCount == 14916) {
+                    halfFrame = true;
+                    quarterFrame = true;
+                    frameCount = 0;
+                }
+            } else {
+                if (frameCount == 3729) {
+                    quarterFrame = true;
+                }
+
+                if (frameCount == 7457) {
+                    halfFrame = true;
+                    quarterFrame = true;
+                }
+
+                if (frameCount == 11186) {
+                    quarterFrame = true;
+                    halfFrame = false;
+                }
+
+                if (frameCount == 14915) {
+                    quarterFrame = false;
+                }
+
+                if (frameCount == 18640) {
+                    halfFrame = true;
+                    quarterFrame = true;
+                    frameCount = 0;
+                }
+
+                if (frameCount == 18641) {
+                    frameCount = 1;
+                    halfFrame = false;
+                    quarterFrame = false;
+                }
             }
 
             if (quarterFrame) {
                 pulse1Envelope.clock(pulse1LengthCtr.halt);
                 pulse2Envelope.clock(pulse2LengthCtr.halt);
+                triangleLinearCtr.clock(true);
                 noiseEnvelope.clock(noiseLengthCtr.halt);
             }
 
             if (halfFrame) {
                 pulse1LengthCtr.clock(pulse1ChanEnabled);
                 pulse2LengthCtr.clock(pulse2ChanEnabled);
+                triangleLengthCtr.clock(triangleChanEnabled);
                 noiseLengthCtr.clock(noiseChanEnabled);
                 pulse1Sweep.clock(0);
                 pulse2Sweep.clock(1);
@@ -258,7 +326,7 @@ public class APU {
             pulse2Synth.amp = (pulse2Envelope.out + 1) / 16.0;
             pulse2Intermediate = pulse2Synth.sample(globalTime);
 
-            if (pulse2LengthCtr.counter > 0 && pulse2Seq.timer >= 8 && !pulse1Sweep.mute && pulse2Envelope.out > 2) {
+            if (pulse2LengthCtr.counter > 0 && pulse2Seq.timer >= 8 && !pulse2Sweep.mute && pulse2Envelope.out > 2) {
                 pulse2Sample += (pulse2Intermediate - pulse2Sample) * 0.5;
             } else {
                 pulse2Sample = 0;
@@ -266,12 +334,24 @@ public class APU {
 
             noiseSeq.clock(noiseChanEnabled);
             if (noiseLengthCtr.counter > 0 && noiseSeq.timer >= 8) {
-                noiseSample = (noiseSeq.output & 0xFF) * (noiseEnvelope.out + 1) / 16.0;
+                noiseSample = (noiseSeq.output & 0xFF) * (noiseEnvelope.out) / 16.0;
+            }
+
+            triangleSeq.clock(triangleChanEnabled);
+            triangleSeq.clock(triangleChanEnabled);
+            triangleSynth.freq = 1789773.0 / (32.0 * (double) ((triangleSeq.reload + 1) & 0xFFFF));
+            triangleIntermediate = triangleSynth.sampleTriangle(globalTime);
+
+            if (triangleLengthCtr.counter > 0 && triangleLinearCtr.timer > 0 && triangleSeq.timer >= 8) {
+                triangleSample += (triangleIntermediate - triangleSample) * 0.5;
+            } else {
+                triangleSample = 0;
             }
             
             if (!pulse1ChanEnabled) pulse1Sample = 0;
             if (!pulse2ChanEnabled) pulse2Sample = 0;
             if (!noiseChanEnabled) noiseSample = 0;
+            if (!triangleChanEnabled) triangleSample = 0;
         }
         pulse1Sweep.track();
         pulse2Sweep.track();
@@ -279,6 +359,7 @@ public class APU {
     }
 
     public short getSample() {
-        return (short) (0.5 * ((pulse1Sample) * 0.1 + (pulse2Sample) * 0.1 + 1.0 * (noiseSample) * 0.1) * Short.MAX_VALUE);
+        return (short) (0.5 * ((pulse1Sample) * 0.1 + (pulse2Sample) * 0.1 
+                                + 1.0 * (noiseSample) * 0.1 + triangleSample * 0.1) * Short.MAX_VALUE);
     }
 }

@@ -58,20 +58,18 @@ public class Emulator {
     public void run() {
         video.init();
         video.createTexture(NES.getScreen());
-        double startTime = 0.0, endTime = 0.0;
         boolean keepTicking = false;
 
-        startTime = video.getTime();
         while (!video.shouldClose()) {
             startFrame = java.lang.System.nanoTime();
 
-            keepTicking = audio.bufHasLT(1000);
+            keepTicking = audio.bufHasLT(1468);
 
             do {
                 NES.tick();
             } while (!NES.frameReady());
 
-            audio.flushSamples(true);
+            audio.flushSamples(!keepTicking);
 
             video.updateTexture(NES.getScreen());
             NES.clearFrameReady();
@@ -79,15 +77,9 @@ public class Emulator {
             if (!keepTicking)
                 capFrameRate(60.0988);
         }
-        endTime = video.getTime();
-
-        long CPUclocks = NES.getCycleCount() / 3;
-        double elapsedTime = endTime - startTime;
-        double MHz = CPUclocks / (elapsedTime * 1000000.0);
-        java.lang.System.out.println("CPU MHz: " + MHz);
 
         NES.endLog();
-        
+        audio.destroy();
         video.cleanup();
     }
 }

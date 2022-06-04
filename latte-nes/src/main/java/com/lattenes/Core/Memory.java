@@ -103,12 +103,13 @@ public class Memory {
             DMATicks = 0;
             PPUReqDMA = true;
         } else if (address >= 0x4000 && address <= 0x4008 
-                || address >= 0x400C && address <= 0x400F
-                || address == 0x4015) {
+                || address >= 0x400A && address <= 0x400F
+                || address == 0x4015 || address == 0x4017) {
             NESAPU.writeToAPUFromCPU(address, value);
-        } else if (address == 0x4016 || address == 0x4017) {
+        } else if (address == 0x4016) {
             // Controller write
-            controllers[address & 0x1] = (address & 0x1) == 0 ? controller1 : controller2;
+            controllers[0] = controller1;
+            controllers[1] = controller2;
         }
     }
 
