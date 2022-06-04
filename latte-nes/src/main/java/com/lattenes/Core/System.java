@@ -18,15 +18,24 @@
 
 package com.lattenes.Core;
 
+import com.lattenes.Core.APU.APU;
 import com.lattenes.Core.CPU.MOS6502;
 import com.lattenes.Core.Cartridge.Cartridge;
+import com.lattenes.Emulator.EmulatorAudio;
 
 public class System {
     private Memory memoryManagementUnit;
     private MOS6502 CPU;
     private PPU NESPPU;
     private Cartridge cartridge;
+    private APU NESAPU;
     private long systemCycleCount = 0;
+
+    private double currentNesAudioTime = 0.0f;
+    private final double realAudioTimeStep = 1.0 / 44100.0;
+    private final double nesAudioTimeStep = 1.0 / 5369318.0;
+
+    private EmulatorAudio audio;
 
     public System(String cartridgeFile) {
         try {
@@ -36,7 +45,8 @@ public class System {
             java.lang.System.exit(-1);
         }
         NESPPU = new PPU(cartridge);
-        memoryManagementUnit = new Memory(cartridge, NESPPU);
+        NESAPU = new APU();
+        memoryManagementUnit = new Memory(cartridge, NESPPU, NESAPU);
         CPU = new MOS6502(memoryManagementUnit, false);
         CPU.reset();
     }
@@ -51,7 +61,9 @@ public class System {
 
     public void tick() {
         NESPPU.clock();
-        
+
+        NESAPU.clock();
+
         if (systemCycleCount % 3 == 0) {
             if (memoryManagementUnit.PPUReqDMA && CPU.doneProcessingInstruction()) {
                 boolean oddCycle = systemCycleCount % 2 == 1;
@@ -71,6 +83,12 @@ public class System {
             }    
         }
 
+        currentNesAudioTime += nesAudioTimeStep;
+        if (currentNesAudioTime >= realAudioTimeStep) {
+            currentNesAudioTime -= realAudioTimeStep;
+            audio.outputSample(NESAPU.getSample());
+        }
+
         systemCycleCount++;
     }
 
@@ -88,5 +106,9 @@ public class System {
 
     public Memory getMemory() {
         return memoryManagementUnit;
+    }
+
+    public void attachEmuAudioObject(EmulatorAudio emulatorAudio) {
+        this.audio = emulatorAudio;
     }
 }

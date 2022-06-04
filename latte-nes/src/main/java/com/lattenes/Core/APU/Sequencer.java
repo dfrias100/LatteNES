@@ -16,26 +16,26 @@
  * this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.lattenes.Core.Cartridge.Mapper;
+ 
+package com.lattenes.Core.APU;
 
-import com.lattenes.Core.Cartridge.Mirror;
-import com.lattenes.Util.Tuple;
+public abstract class Sequencer {
+    long sequence = 0;
+    int timer = 0;
+    int reload = 0;
+    byte output = 0;
 
-public interface IMapper {
-    // Read and writing methods return a tuple
-    // The first element denotes if the operation was successful
-    // The second element is the newly mapped address
+    byte clock(boolean enabled) {
+        if (enabled) {
+            timer--;
+            if (timer < 0) {
+                timer = reload + 1;
+                manipulateSequence();
+                output = (byte) (sequence & 0x1);
+            }
+        }
+        return output;
+    }
 
-    public Tuple<Boolean, Integer> writeWordFromCPU(int address, byte value);
-    public Tuple<Boolean, Integer> writeWordFromPPU(int address, byte value);
-
-    public Tuple<Boolean, Integer> readWordFromCPU(int address);
-    public Tuple<Boolean, Integer> readWordFromPPU(int address);
-
-    public void reset();
-
-    public Mirror getMirroring();
-
-    public boolean getIRQ();
-    public void clearIRQ();
+    abstract void manipulateSequence();
 }

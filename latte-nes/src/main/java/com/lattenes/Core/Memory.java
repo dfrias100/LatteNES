@@ -18,7 +18,9 @@
 
 package com.lattenes.Core;
 
+import com.lattenes.Core.APU.APU;
 import com.lattenes.Core.Cartridge.Cartridge;
+import com.lattenes.Util.Tuple;
 
 public class Memory {
     /* NES complete memory map
@@ -46,6 +48,7 @@ public class Memory {
     private byte[] CPUMemory;
     private Cartridge cartridge;
     private PPU NESPPU;
+    private APU NESAPU;
     private byte[] controllers;
     public byte controller1;
     public byte controller2;
@@ -59,11 +62,12 @@ public class Memory {
 
     public int DMATicks = 0;
 
-    public Memory(Cartridge cartridge, PPU NESPPU) {
+    public Memory(Cartridge cartridge, PPU NESPPU, APU NESAPU) {
         CPUMemory = new byte[RAM_SIZE];
         controllers = new byte[2];
         this.cartridge = cartridge;
         this.NESPPU = NESPPU;
+        this.NESAPU = NESAPU;
     }
 
     public void stepDMA() {
@@ -98,8 +102,9 @@ public class Memory {
             DMAAddr = 0;
             DMATicks = 0;
             PPUReqDMA = true;
-        } else if (address == 0x4015) {
-            // APU status write
+        } else if (address >= 0x4000 && address <= 0x4008 
+                || address == 0x4015 || address == 0x400F) {
+            NESAPU.writeToAPUFromCPU(address, value);
         } else if (address == 0x4016 || address == 0x4017) {
             // Controller write
             controllers[address & 0x1] = (address & 0x1) == 0 ? controller1 : controller2;

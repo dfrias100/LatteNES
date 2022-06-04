@@ -24,6 +24,7 @@ public class Emulator {
     private EmulatorVideo video;
     private System NES;
     private long startFrame = 0;
+    private EmulatorAudio audio;
 
     public Emulator() {
         video = new EmulatorVideo();
@@ -37,9 +38,14 @@ public class Emulator {
             return false;
         }
         video.system = NES;
+
         EmulatorInput.createTupleArray();
         EmulatorInput.initKeys();
         EmulatorInput.attachMMU(NES.getMemory());
+
+        audio = new EmulatorAudio(44100);
+        NES.attachEmuAudioObject(audio);
+
         return true;
     }
 
@@ -51,21 +57,27 @@ public class Emulator {
 
     public void run() {
         video.init();
-
         video.createTexture(NES.getScreen());
         double startTime = 0.0, endTime = 0.0;
-        
+        boolean keepTicking = false;
+
         startTime = video.getTime();
         while (!video.shouldClose()) {
             startFrame = java.lang.System.nanoTime();
+
+            keepTicking = audio.bufHasLT(700);
+
             do {
                 NES.tick();
             } while (!NES.frameReady());
 
+            audio.flushSamples(true);
+
             video.updateTexture(NES.getScreen());
             NES.clearFrameReady();
             video.draw();
-            capFrameRate(60.0988);
+            if (!keepTicking)
+                capFrameRate(60.0988);
         }
         endTime = video.getTime();
 

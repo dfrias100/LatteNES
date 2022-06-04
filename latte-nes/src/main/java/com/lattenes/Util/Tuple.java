@@ -16,7 +16,7 @@
  * this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.lattenes.Core;
+package com.lattenes.Util;
 
 public class Tuple<T, G> {
     public T first;

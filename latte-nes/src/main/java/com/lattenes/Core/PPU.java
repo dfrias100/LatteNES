@@ -53,6 +53,7 @@ package com.lattenes.Core;
 
 import com.lattenes.Core.Cartridge.Cartridge;
 import com.lattenes.Core.Cartridge.Mirror;
+import com.lattenes.Util.Tuple;
 
 import java.util.EnumSet;
 
@@ -1000,7 +1001,7 @@ public class PPU {
 
                     
                     if (!controlRegister.contains(ControlRegisterEnum.SpriteSize)) {
-                        spritePatternAddressLo = controlRegister.contains(ControlRegisterEnum.SpriteSize) ? 0x1000 : 0x0000;
+                        spritePatternAddressLo = controlRegister.contains(ControlRegisterEnum.SpriteTable) ? 0x1000 : 0x0000;
                         spritePatternAddressLo |= (spriteID & 0xFF) << 4;
                         if ((spriteAttribute & 0x80) == 0) {
                             spritePatternAddressLo |= (scanline - (spriteY & 0xFF));

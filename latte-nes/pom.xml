@@ -84,6 +84,10 @@
     </dependency>
     <dependency>
       <groupId>org.lwjgl</groupId>
+      <artifactId>lwjgl-openal</artifactId>
+	  </dependency>
+    <dependency>
+      <groupId>org.lwjgl</groupId>
       <artifactId>lwjgl</artifactId>
       <classifier>${lwjgl.natives}</classifier>
     </dependency>
@@ -92,6 +96,11 @@
       <artifactId>lwjgl-glfw</artifactId>
       <classifier>${lwjgl.natives}</classifier>
     </dependency>
+    <dependency>
+		  <groupId>org.lwjgl</groupId>
+		  <artifactId>lwjgl-openal</artifactId>
+		  <classifier>${lwjgl.natives}</classifier>
+	  </dependency>
     <dependency>
       <groupId>org.lwjgl</groupId>
       <artifactId>lwjgl-opengl</artifactId>
