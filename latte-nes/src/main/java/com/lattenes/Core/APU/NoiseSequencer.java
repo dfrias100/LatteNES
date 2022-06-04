@@ -18,15 +18,19 @@
 
 package com.lattenes.Core.APU;
 
-public class ChannelLengthCounter {
-    boolean halt = false;
-    short counter = 0;
-    short clock(boolean enabled) {
-        if (!enabled) {
-            counter = 0;
-        } else if (counter > 0 && !halt) {
-            counter--;
+public class NoiseSequencer extends Sequencer {
+    boolean mode = false;
+    
+    @Override
+    void manipulateSequence() {
+        int feedback;
+
+        if (mode) {
+            feedback = (int) ((sequence & 0x01) ^ ((sequence >> 6) & 0x01));
+        } else {
+            feedback = (int) ((sequence & 0x01) ^ ((sequence >> 1) & 0x01));
         }
-        return counter;
+
+        sequence = (sequence >> 1) | (feedback << 14);
     }
 }

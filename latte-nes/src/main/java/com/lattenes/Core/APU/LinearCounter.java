@@ -18,15 +18,23 @@
 
 package com.lattenes.Core.APU;
 
-public class ChannelLengthCounter {
-    boolean halt = false;
-    short counter = 0;
-    short clock(boolean enabled) {
-        if (!enabled) {
-            counter = 0;
-        } else if (counter > 0 && !halt) {
-            counter--;
+public class LinearCounter {
+    short reload = 0;
+    short timer = 0;
+    boolean controlFlag = false;
+    boolean reloadTimer = false;
+
+    void clock(boolean enabled) {
+        if (enabled) {
+            if (reloadTimer) {
+                timer = reload;
+            } else if (timer > 0) {
+                timer--;
+            }
+
+            if (!controlFlag) {
+                reloadTimer = false;
+            }
         }
-        return counter;
     }
 }
