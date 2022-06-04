@@ -65,7 +65,7 @@ public class Emulator {
         while (!video.shouldClose()) {
             startFrame = java.lang.System.nanoTime();
 
-            keepTicking = audio.bufHasLT(700);
+            keepTicking = audio.bufHasLT(1000);
 
             do {
                 NES.tick();

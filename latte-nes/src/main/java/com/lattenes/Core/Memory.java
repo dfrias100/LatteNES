@@ -103,7 +103,8 @@ public class Memory {
             DMATicks = 0;
             PPUReqDMA = true;
         } else if (address >= 0x4000 && address <= 0x4008 
-                || address == 0x4015 || address == 0x400F) {
+                || address >= 0x400C && address <= 0x400F
+                || address == 0x4015) {
             NESAPU.writeToAPUFromCPU(address, value);
         } else if (address == 0x4016 || address == 0x4017) {
             // Controller write
