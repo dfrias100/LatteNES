@@ -18,6 +18,9 @@
 
 package com.lattenes.Core;
 
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+import java.util.ArrayList;
 import com.lattenes.Core.APU.APU;
 import com.lattenes.Core.Cartridge.Cartridge;
 import com.lattenes.Util.Tuple;
@@ -61,6 +64,9 @@ public class Memory {
     public byte DMAData = 0;
 
     public int DMATicks = 0;
+
+    public boolean saveStateFlag = false;
+    public boolean loadStateFlag = false;
 
     public Memory(Cartridge cartridge, PPU NESPPU, APU NESAPU) {
         CPUMemory = new byte[RAM_SIZE];
@@ -140,5 +146,54 @@ public class Memory {
 
     public void clearNMI() {
         NESPPU.clearNMI();
+    }
+
+    public byte[] dumpState() {
+        ArrayList<byte[]> fieldArrays = new ArrayList<byte[]>();
+        fieldArrays.add(CPUMemory);
+        fieldArrays.add(controllers);
+
+        byte[] booleanFields = new byte[2];
+        booleanFields[0] = (byte) (PPUReqDMA ? 1 : 0);
+        booleanFields[1] = (byte) (DMAWait ? 1 : 0);
+
+        fieldArrays.add(booleanFields);
+        fieldArrays.add(ByteBuffer.allocate(4).order(ByteOrder.LITTLE_ENDIAN).putInt(DMAPage).array());
+        fieldArrays.add(ByteBuffer.allocate(4).order(ByteOrder.LITTLE_ENDIAN).putInt(DMAAddr).array());
+        fieldArrays.add(ByteBuffer.allocate(4).order(ByteOrder.LITTLE_ENDIAN).putInt(OAMAddr).array());
+        fieldArrays.add(ByteBuffer.allocate(4).order(ByteOrder.LITTLE_ENDIAN).putInt(DMAData).array());
+        fieldArrays.add(ByteBuffer.allocate(4).order(ByteOrder.LITTLE_ENDIAN).putInt(DMATicks).array());
+
+        final int size = RAM_SIZE + 2 * 8 + 2 + 4 * 5;
+        byte[] state = new byte[size];
+        int k = 0;
+
+        for (byte[] fieldArray : fieldArrays) {
+            for (int i = 0; i < fieldArray.length; i++) {
+                state[k++] = fieldArray[i];
+            }
+        }
+
+        return state;
+    }
+
+    public void loadState(byte[] state) {
+        int k = 0;
+        for (int i = 0; i < CPUMemory.length; i++) {
+            CPUMemory[i] = state[k++];
+        }
+        for (int i = 0; i < controllers.length; i++) {
+            controllers[i] = state[k++];
+        }
+        PPUReqDMA = (state[k++] == 1);
+        DMAWait = (state[k++] == 1);
+        DMAPage = ByteBuffer.wrap(state, k, 4).order(ByteOrder.LITTLE_ENDIAN).getInt();
+        k += 4;
+        DMAAddr = ByteBuffer.wrap(state, k, 4).order(ByteOrder.LITTLE_ENDIAN).getInt();
+        k += 4;
+        OAMAddr = ByteBuffer.wrap(state, k, 4).order(ByteOrder.LITTLE_ENDIAN).getInt();
+        k += 4;
+        DMAData = state[k++];
+        DMATicks = ByteBuffer.wrap(state, k, 4).order(ByteOrder.LITTLE_ENDIAN).getInt();
     }
 }

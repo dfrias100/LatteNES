@@ -22,6 +22,6 @@ package com.lattenes.Core.APU;
 public class PulseSequencer extends Sequencer {
     @Override
     void manipulateSequence() {
-        sequence = ((sequence & 0x1) << 7) | ((sequence & 0xFE) >> 1);
+        sequence = ((sequence & 0x80) >> 7) | ((sequence & 0x7F) << 1);
     }
 }

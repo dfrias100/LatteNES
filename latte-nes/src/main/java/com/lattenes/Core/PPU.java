@@ -55,6 +55,9 @@ import com.lattenes.Core.Cartridge.Cartridge;
 import com.lattenes.Core.Cartridge.Mirror;
 import com.lattenes.Util.Tuple;
 
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+import java.util.ArrayList;
 import java.util.EnumSet;
 
 public class PPU {
@@ -136,6 +139,16 @@ public class PPU {
     private EnumSet<PPUMaskEnum> maskRegister = EnumSet.noneOf(PPUMaskEnum.class);
     private EnumSet<ControlRegisterEnum> controlRegister = EnumSet.noneOf(ControlRegisterEnum.class);
     
+    private void byteToStatusEnumSet(byte value) {
+        statusRegister.clear();
+        for (PPUStatusEnum e : PPUStatusEnum.values()) {
+            if ((value & e.value) == e.value) {
+                statusRegister.add(e);
+            }
+        }
+    }
+    
+    
     private void byteToMaskEnumSet(byte value) {
         maskRegister.clear();
         for (PPUMaskEnum maskEnum : PPUMaskEnum.values()) {
@@ -158,6 +171,22 @@ public class PPU {
         byte result = 0x00;
         for (PPUStatusEnum statusEnum : statusRegister) {
             result |= statusEnum.value;
+        }
+        return result;
+    }
+
+    private byte maskEnumSetToByte() {
+        byte result = 0x00;
+        for (PPUMaskEnum maskEnum : maskRegister) {
+            result |= maskEnum.value;
+        }
+        return result;
+    }
+
+    private byte controlEnumSetToByte() {
+        byte result = 0x00;
+        for (ControlRegisterEnum controlEnum : controlRegister) {
+            result |= controlEnum.value;
         }
         return result;
     }
@@ -189,6 +218,133 @@ public class PPU {
     private int bgNextTile = 0;
     private int bgNextTileID = 0;
     private int bgNextTileAttributes = 0;
+
+    public byte[] dumpState() {
+        ArrayList<byte[]> fieldArray = new ArrayList<byte[]>();
+        fieldArray.add(palletteTable);
+        fieldArray.add(vRAM);
+        fieldArray.add(SecondaryOAMData);
+        fieldArray.add(OAMData);
+
+        byte[] screenBytes = new byte[screen.length * (Float.SIZE / 8)];
+        ByteBuffer.wrap(screenBytes).asFloatBuffer().put(screen);
+        fieldArray.add(screenBytes);
+
+        fieldArray.add(ByteBuffer.allocate(4).order(ByteOrder.LITTLE_ENDIAN).putInt(cycles).array());
+        fieldArray.add(ByteBuffer.allocate(4).order(ByteOrder.LITTLE_ENDIAN).putInt(scanline).array());
+        fieldArray.add(ByteBuffer.allocate(1).order(ByteOrder.LITTLE_ENDIAN).put(spritesOnScanline).array());
+        fieldArray.add(ByteBuffer.allocate(1).order(ByteOrder.LITTLE_ENDIAN).put(sprite0HitPossible ? (byte) 1 : (byte) 0).array());
+        fieldArray.add(ByteBuffer.allocate(1).order(ByteOrder.LITTLE_ENDIAN).put(sprite0Rendering ? (byte) 1 : (byte) 0).array());
+        fieldArray.add(ByteBuffer.allocate(1).order(ByteOrder.LITTLE_ENDIAN).put(addressLatch ? (byte) 1 : (byte) 0).array());
+        fieldArray.add(ByteBuffer.allocate(1).order(ByteOrder.LITTLE_ENDIAN).put(reqNMI ? (byte) 1 : (byte) 0).array());
+        fieldArray.add(ByteBuffer.allocate(1).order(ByteOrder.LITTLE_ENDIAN).put(frameReady ? (byte) 1 : (byte) 0).array());
+        fieldArray.add(ByteBuffer.allocate(4).order(ByteOrder.LITTLE_ENDIAN).putInt(VRAMAddress).array());
+        fieldArray.add(ByteBuffer.allocate(4).order(ByteOrder.LITTLE_ENDIAN).putInt(TRAMAddress).array());
+        fieldArray.add(ByteBuffer.allocate(2).order(ByteOrder.LITTLE_ENDIAN).putShort(fineXScroll).array());
+        fieldArray.add(ByteBuffer.allocate(2).order(ByteOrder.LITTLE_ENDIAN).putShort(OAMAddress).array());
+        fieldArray.add(ByteBuffer.allocate(4).order(ByteOrder.LITTLE_ENDIAN).putInt(backgroundShiftPatternLoByte).array());
+        fieldArray.add(ByteBuffer.allocate(4).order(ByteOrder.LITTLE_ENDIAN).putInt(backgroundShiftPatternHiByte).array());
+        fieldArray.add(ByteBuffer.allocate(4).order(ByteOrder.LITTLE_ENDIAN).putInt(backgroundShiftAttributeLoByte).array());
+        fieldArray.add(ByteBuffer.allocate(4).order(ByteOrder.LITTLE_ENDIAN).putInt(backgroundShiftAttributeHiByte).array());
+        fieldArray.add(ByteBuffer.allocate(4).order(ByteOrder.LITTLE_ENDIAN).putInt(bgNextTile).array());
+        fieldArray.add(ByteBuffer.allocate(4).order(ByteOrder.LITTLE_ENDIAN).putInt(bgNextTileID).array());
+        fieldArray.add(ByteBuffer.allocate(4).order(ByteOrder.LITTLE_ENDIAN).putInt(bgNextTileAttributes).array());
+
+        byte[] spriteShiftersLoAsBytes = new byte[spriteShiftPatternLoByte.length * (Short.SIZE / 8)];
+        ByteBuffer.wrap(spriteShiftersLoAsBytes).asShortBuffer().put(spriteShiftPatternLoByte);
+        fieldArray.add(spriteShiftersLoAsBytes);
+
+        byte[] spriteShiftersHiAsBytes = new byte[spriteShiftPatternHiByte.length * (Short.SIZE / 8)];
+        ByteBuffer.wrap(spriteShiftersHiAsBytes).asShortBuffer().put(spriteShiftPatternHiByte);
+        fieldArray.add(spriteShiftersHiAsBytes);
+
+        fieldArray.add(ByteBuffer.allocate(1).order(ByteOrder.LITTLE_ENDIAN).put(statusEnumSetToByte()).array());
+        fieldArray.add(ByteBuffer.allocate(1).order(ByteOrder.LITTLE_ENDIAN).put(maskEnumSetToByte()).array());
+        fieldArray.add(ByteBuffer.allocate(1).order(ByteOrder.LITTLE_ENDIAN).put(controlEnumSetToByte()).array());
+
+        int size = 0;
+
+        for (byte[] field : fieldArray) {
+            size += field.length;
+        }
+
+        byte[] state = new byte[size];
+        int k = 0;
+
+        for (byte[] field : fieldArray) {
+            for (int i = 0; i < field.length; i++) {
+                state[k++] = field[i];
+            }
+        }
+
+        return state;
+    }
+
+    public void loadState(byte[] state) {
+        int k = 0;
+        for (int i = 0; i < palletteTable.length; i++) {
+            palletteTable[i] = state[k++];
+        }
+        for (int i = 0; i < vRAM.length; i++) {
+            vRAM[i] = state[k++];
+        }
+        for (int i = 0; i < SecondaryOAMData.length; i++) {
+            SecondaryOAMData[i] = state[k++];
+        }
+        for (int i = 0; i < OAMData.length; i++) {
+            OAMData[i] = state[k++];
+        }
+        byte[] screenBytes = new byte[screen.length * (Float.SIZE / 8)];
+        for (int i = 0; i < screenBytes.length; i++) {
+            screenBytes[i] = state[k++];
+        }
+        ByteBuffer.wrap(screenBytes).asFloatBuffer().get(screen);
+        cycles = ByteBuffer.wrap(state, k, 4).order(ByteOrder.LITTLE_ENDIAN).getInt();
+        k += 4;
+        scanline = ByteBuffer.wrap(state, k, 4).order(ByteOrder.LITTLE_ENDIAN).getInt();
+        k += 4;
+        spritesOnScanline = state[k++];
+        sprite0HitPossible = state[k++] == 1;
+        sprite0Rendering = state[k++] == 1;
+        addressLatch = state[k++] == 1;
+        reqNMI = state[k++] == 1;
+        frameReady = state[k++] == 1;
+        VRAMAddress = ByteBuffer.wrap(state, k, 4).order(ByteOrder.LITTLE_ENDIAN).getInt();
+        k += 4;
+        TRAMAddress = ByteBuffer.wrap(state, k, 4).order(ByteOrder.LITTLE_ENDIAN).getInt();
+        k += 4;
+        fineXScroll = ByteBuffer.wrap(state, k, 2).order(ByteOrder.LITTLE_ENDIAN).getShort();
+        k += 2;
+        OAMAddress = ByteBuffer.wrap(state, k, 2).order(ByteOrder.LITTLE_ENDIAN).getShort();
+        k += 2;
+        backgroundShiftPatternLoByte = ByteBuffer.wrap(state, k, 4).order(ByteOrder.LITTLE_ENDIAN).getInt();
+        k += 4;
+        backgroundShiftPatternHiByte = ByteBuffer.wrap(state, k, 4).order(ByteOrder.LITTLE_ENDIAN).getInt();
+        k += 4;
+        backgroundShiftAttributeLoByte = ByteBuffer.wrap(state, k, 4).order(ByteOrder.LITTLE_ENDIAN).getInt();
+        k += 4;
+        backgroundShiftAttributeHiByte = ByteBuffer.wrap(state, k, 4).order(ByteOrder.LITTLE_ENDIAN).getInt();
+        k += 4;
+        bgNextTile = ByteBuffer.wrap(state, k, 4).order(ByteOrder.LITTLE_ENDIAN).getInt();
+        k += 4;
+        bgNextTileID = ByteBuffer.wrap(state, k, 4).order(ByteOrder.LITTLE_ENDIAN).getInt();
+        k += 4;
+        bgNextTileAttributes = ByteBuffer.wrap(state, k, 4).order(ByteOrder.LITTLE_ENDIAN).getInt();
+        k += 4;
+        byte[] spriteShiftersLoAsBytes = new byte[spriteShiftPatternLoByte.length * (Short.SIZE / 8)];
+        for (int i = 0; i < spriteShiftersLoAsBytes.length; i++) {
+            spriteShiftersLoAsBytes[i] = state[k++];
+        }
+        ByteBuffer.wrap(spriteShiftersLoAsBytes).asShortBuffer().get(spriteShiftPatternLoByte);
+        byte[] spriteShiftersHiAsBytes = new byte[spriteShiftPatternHiByte.length * (Short.SIZE / 8)];
+        for (int i = 0; i < spriteShiftersHiAsBytes.length; i++) {
+            spriteShiftersHiAsBytes[i] = state[k++];
+        }
+        ByteBuffer.wrap(spriteShiftersHiAsBytes).asShortBuffer().get(spriteShiftPatternHiByte);
+        byteToStatusEnumSet(state[k++]);
+        byteToMaskEnumSet(state[k++]);
+        byteToControlEnumSet(state[k++]);
+    }
 
     public PPU(Cartridge cartridge) {
         this.cartridge = cartridge;

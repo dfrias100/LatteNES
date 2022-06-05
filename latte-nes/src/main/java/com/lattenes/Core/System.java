@@ -21,7 +21,9 @@ package com.lattenes.Core;
 import com.lattenes.Core.APU.APU;
 import com.lattenes.Core.CPU.MOS6502;
 import com.lattenes.Core.Cartridge.Cartridge;
+import com.lattenes.Emulator.Emulator;
 import com.lattenes.Emulator.EmulatorAudio;
+import com.lattenes.Util.SaveStateUtil;
 
 public class System {
     private Memory memoryManagementUnit;
@@ -30,6 +32,7 @@ public class System {
     private Cartridge cartridge;
     private APU NESAPU;
     private long systemCycleCount = 0;
+    private Emulator emulatorObj;
 
     private double currentNesAudioTime = 0.0f;
     private final double realAudioTimeStep = 1.0 / 44100.0;
@@ -60,6 +63,46 @@ public class System {
     }
 
     public void tick() {
+        if (memoryManagementUnit.saveStateFlag) {
+            memoryManagementUnit.saveStateFlag = false;
+            byte[] cpuState = CPU.dumpState();
+            byte[] memState = memoryManagementUnit.dumpState();
+            byte[] ppuState = NESPPU.dumpState();
+
+            final int size = cpuState.length + memState.length + ppuState.length;
+            byte[] state = new byte[size];
+
+            java.lang.System.out.println(cpuState.length);
+            java.lang.System.out.println(memState.length);
+            java.lang.System.out.println(ppuState.length);
+
+            java.lang.System.arraycopy(cpuState, 0, state, 0, cpuState.length);
+            java.lang.System.arraycopy(memState, 0, state, cpuState.length, memState.length);
+            java.lang.System.arraycopy(ppuState, 0, state, cpuState.length + memState.length, ppuState.length);
+
+            SaveStateUtil.saveState("sav", state);
+            audio.flushSamples(false);
+            emulatorObj.keepTicking = true;
+        } else if (memoryManagementUnit.loadStateFlag) {
+            memoryManagementUnit.loadStateFlag = false;
+            byte[] systemState = SaveStateUtil.loadState("sav");
+            if (systemState != null) {
+                byte[] cpuState = new byte[17];
+                byte[] memState = new byte[2086];
+                byte[] ppuState = new byte[985497];
+
+                java.lang.System.arraycopy(systemState, 0, cpuState, 0, cpuState.length);
+                java.lang.System.arraycopy(systemState, cpuState.length, memState, 0, memState.length);
+                java.lang.System.arraycopy(systemState, cpuState.length + memState.length, ppuState, 0, ppuState.length);
+
+                CPU.loadState(cpuState);
+                memoryManagementUnit.loadState(memState);
+                NESPPU.loadState(ppuState);
+                audio.flushSamples(false);
+                emulatorObj.keepTicking = true;
+            }
+        }
+
         NESPPU.clock();
 
         NESAPU.clock();
@@ -110,5 +153,9 @@ public class System {
 
     public void attachEmuAudioObject(EmulatorAudio emulatorAudio) {
         this.audio = emulatorAudio;
+    }
+
+    public void attachEmulatorObject(Emulator emulator) {
+        this.emulatorObj = emulator;
     }
 }

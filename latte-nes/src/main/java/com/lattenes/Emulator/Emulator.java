@@ -25,6 +25,7 @@ public class Emulator {
     private System NES;
     private long startFrame = 0;
     private EmulatorAudio audio;
+    public boolean keepTicking = false;
 
     public Emulator() {
         video = new EmulatorVideo();
@@ -45,6 +46,7 @@ public class Emulator {
 
         audio = new EmulatorAudio(44100);
         NES.attachEmuAudioObject(audio);
+        NES.attachEmulatorObject(this);
 
         return true;
     }
@@ -58,7 +60,7 @@ public class Emulator {
     public void run() {
         video.init();
         video.createTexture(NES.getScreen());
-        boolean keepTicking = false;
+        keepTicking = false;
 
         while (!video.shouldClose()) {
             startFrame = java.lang.System.nanoTime();
@@ -74,8 +76,9 @@ public class Emulator {
             video.updateTexture(NES.getScreen());
             NES.clearFrameReady();
             video.draw();
-            if (!keepTicking)
+            if (!keepTicking) {
                 capFrameRate(60.0988);
+            }
         }
 
         NES.endLog();

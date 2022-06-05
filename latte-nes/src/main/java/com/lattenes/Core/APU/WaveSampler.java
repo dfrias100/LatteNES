@@ -44,21 +44,4 @@ public class WaveSampler {
 
         return (2.0 * amp / pi) * (a - b);
     }
-
-    double sampleTriangle(double t) {
-        double h = 2 * harmonics;
-        double c = 0;
-        double o = -1;
-        double p = 0;
-        double a = 0;
-
-        for (double n = 1; n < h; n += 2.0) {
-            c = n * 2.0 * pi * freq * t;
-            p = n * n;
-            a += o * approxSin(c) / p;
-            o *= -1;
-        } 
-
-        return (8.0 * amp / (pi * pi)) * a;
-    }
 }

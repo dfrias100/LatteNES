@@ -36,7 +36,7 @@ public class EmulatorInput {
 
     @SuppressWarnings("unchecked")
     static void createTupleArray() {
-        mappedKeys = (Tuple<Integer, Integer>[]) Array.newInstance(Tuple.class, 8);
+        mappedKeys = (Tuple<Integer, Integer>[]) Array.newInstance(Tuple.class, 10);
     }
 
     static void initKeys() {
@@ -48,6 +48,8 @@ public class EmulatorInput {
         mappedKeys[5] = new Tuple<Integer, Integer>(GLFW_KEY_DOWN, 0x04);
         mappedKeys[6] = new Tuple<Integer, Integer>(GLFW_KEY_LEFT, 0x02);
         mappedKeys[7] = new Tuple<Integer, Integer>(GLFW_KEY_RIGHT, 0x01);
+        mappedKeys[8] = new Tuple<Integer, Integer>(GLFW_KEY_F1, 0x100);
+        mappedKeys[9] = new Tuple<Integer, Integer>(GLFW_KEY_F2, 0x200);
     }
 
     static void keyboardInputCallback (long window, int key, int scancode, int action, int mods) {
@@ -58,7 +60,19 @@ public class EmulatorInput {
     static void updateControllerState() {
         for (Tuple<Integer, Integer> key : mappedKeys) {
             if (keys[key.first] == GLFW_PRESS) {
-                memory.controller1 |= key.second; 
+                if (key.second >= 0x100) {
+                    if (key.second == 0x100) {
+                        // Save state
+                        java.lang.System.out.println("Saving state");
+                        memory.saveStateFlag = true;
+                    } else if (key.second == 0x200) {
+                        // Load state
+                        java.lang.System.out.println("Loading state");
+                        memory.loadStateFlag = true;
+                    }
+                } else {
+                    memory.controller1 |= key.second; 
+                }
             } else if (keys[key.first] == GLFW_RELEASE) {
                 memory.controller1 &= ~key.second;
             }

@@ -27,22 +27,20 @@ public class Envelope {
     int out = 0;
 
     void clock(boolean loop) {
-        if (!start) {
-            if (divider == 0) {
-                divider = volume;
-                if (decay == 0) {
-                    if (loop)
-                        decay = 15;
-                } else {
-                    decay--;
-                }
-            } else {
-                divider--;
-            }
-        } else {
+        if (start) {
             start = false;
             decay = 15;
-            divider = volume;
+            divider = volume + 1;
+        } else if (divider > 0) {
+            divider--;
+        } else {
+            if (decay > 0) {
+                decay--;
+            } else if (loop) {
+                decay = 15;
+            }
+
+            divider = volume + 1;
         }
 
         if (enabled) {

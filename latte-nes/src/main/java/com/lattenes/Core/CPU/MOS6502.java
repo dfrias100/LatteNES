@@ -25,6 +25,8 @@ import com.lattenes.Core.Memory;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 
 public class MOS6502 {
     private int PC;
@@ -69,6 +71,43 @@ public class MOS6502 {
         private ProcessorStatusWordFlag(int value) {
             this.value = value;
         }
+    }
+
+    public byte[] dumpState() {
+        ArrayList<byte[]> state = new ArrayList<byte[]>();
+        state.add(ByteBuffer.allocate(4).order(ByteOrder.LITTLE_ENDIAN).putInt(PC).array());
+        state.add(ByteBuffer.allocate(2).order(ByteOrder.LITTLE_ENDIAN).putShort(SP).array());
+        state.add(ByteBuffer.allocate(1).order(ByteOrder.LITTLE_ENDIAN).put(processorStatusWord).array());
+        state.add(ByteBuffer.allocate(2).order(ByteOrder.LITTLE_ENDIAN).putShort(A).array());
+        state.add(ByteBuffer.allocate(2).order(ByteOrder.LITTLE_ENDIAN).putShort(X).array());
+        state.add(ByteBuffer.allocate(2).order(ByteOrder.LITTLE_ENDIAN).putShort(Y).array());
+        state.add(ByteBuffer.allocate(4).order(ByteOrder.LITTLE_ENDIAN).putInt(cycles).array());
+
+        byte[] stateArray = new byte[17];
+        int k = 0;
+        for (byte[] array : state) {
+            for (int i = 0; i < array.length; i++) {
+                stateArray[k++] = array[i];
+            }
+        }
+        
+        return stateArray;
+    }
+
+    public void loadState(byte[] state) {
+        int k = 0;
+        PC = ByteBuffer.wrap(state, k, 4).order(ByteOrder.LITTLE_ENDIAN).getInt();
+        k += 4;
+        SP = ByteBuffer.wrap(state, k, 2).order(ByteOrder.LITTLE_ENDIAN).getShort();
+        k += 2;
+        processorStatusWord = state[k++];
+        A = ByteBuffer.wrap(state, k, 2).order(ByteOrder.LITTLE_ENDIAN).getShort();
+        k += 2;
+        X = ByteBuffer.wrap(state, k, 2).order(ByteOrder.LITTLE_ENDIAN).getShort();
+        k += 2;
+        Y = ByteBuffer.wrap(state, k, 2).order(ByteOrder.LITTLE_ENDIAN).getShort();
+        k += 2;
+        cycles = ByteBuffer.wrap(state, k, 4).order(ByteOrder.LITTLE_ENDIAN).getInt();
     }
 
     public boolean doneProcessingInstruction() {

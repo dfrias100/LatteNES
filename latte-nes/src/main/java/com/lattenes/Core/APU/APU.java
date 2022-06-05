@@ -40,11 +40,8 @@ public class APU {
     private TriangleSequencer triangleSeq;
     private ChannelLengthCounter triangleLengthCtr;
     private LinearCounter triangleLinearCtr;
-    private WaveSampler triangleSynth;
 
     private long frameCount = 0;
-    private double pulse1Intermediate = 0;
-    private double pulse2Intermediate = 0;
     private double triangleIntermediate = 0;
     private double pulse1Sample = 0;
     private double pulse2Sample = 0;
@@ -85,10 +82,14 @@ public class APU {
         triangleSeq = new TriangleSequencer();
         triangleLengthCtr = new ChannelLengthCounter();
         triangleLinearCtr = new LinearCounter();
-        triangleSynth = new WaveSampler();
+
+        triangleSeq.lengthCounter = triangleLengthCtr;
+        triangleSeq.linearCounter = triangleLinearCtr;
 
         pulse1Sweep.pulseSeq = pulse1Seq;
         pulse2Sweep.pulseSeq = pulse2Seq;
+
+        NESFilters.init();
 
         noiseSeq.sequence = 0xDBDB;
     }
@@ -98,22 +99,23 @@ public class APU {
             case 0x4000:
                 switch ((value & 0xC0) >> 6) {
                     case 0x00:
-                        pulse1Seq.sequence = 0b00000001;
+                        pulse1Seq.newSequence = 0b01000000;
                         pulse1Synth.duty = 0.125;
                         break;
                     case 0x01:
-                        pulse1Seq.sequence = 0b00000011;
+                        pulse1Seq.newSequence = 0b01100000;
                         pulse1Synth.duty = 0.250;
                         break;
                     case 0x02:
-                        pulse1Seq.sequence = 0b00001111;
+                        pulse1Seq.newSequence = 0b01111000;
                         pulse1Synth.duty = 0.500;
                         break;
                     case 0x03:
-                        pulse1Seq.sequence = 0b11111100;
+                        pulse1Seq.newSequence = 0b10011111;
                         pulse1Synth.duty = 0.750;
                         break;
                 }
+                pulse1Seq.sequence = pulse1Seq.newSequence;
                 pulse1LengthCtr.halt = (value & 0x20) == 0x20;
                 pulse1Envelope.enabled = (value & 0x10) != 0x10;
                 pulse1Envelope.volume = (value & 0x0F);
@@ -132,27 +134,29 @@ public class APU {
                 pulse1Seq.reload = (pulse1Seq.reload & 0x00FF) | ((value & 0x07) << 8);
                 pulse1Seq.timer = pulse1Seq.reload;
                 pulse1LengthCtr.counter = lengthTable[(value & 0xF8) >> 3];
+                pulse1Seq.sequence = pulse1Seq.newSequence;
                 pulse1Envelope.start = true;
                 break;
             case 0x4004:
                 switch ((value & 0xC0) >> 6) {
                     case 0x00:
-                        pulse2Seq.sequence = 0b00000001;
+                        pulse2Seq.newSequence = 0b01000000;
                         pulse2Synth.duty = 0.125;
                         break;
                     case 0x01:
-                        pulse2Seq.sequence = 0b00000011;
+                        pulse2Seq.newSequence = 0b01100000;
                         pulse2Synth.duty = 0.250;
                         break;
                     case 0x02:
-                        pulse2Seq.sequence = 0b00001111;
+                        pulse2Seq.newSequence = 0b01111000;
                         pulse2Synth.duty = 0.500;
                         break;
                     case 0x03:
-                        pulse2Seq.sequence = 0b11111100;
+                        pulse2Seq.newSequence = 0b10011111;
                         pulse2Synth.duty = 0.750;
                         break;
                 }
+                pulse2Seq.sequence = pulse2Seq.newSequence;
                 pulse2LengthCtr.halt = (value & 0x20) == 0x20;
                 pulse2Envelope.enabled = (value & 0x10) != 0x10;
                 pulse2Envelope.volume = (value & 0x0F);
@@ -170,6 +174,7 @@ public class APU {
             case 0x4007:
                 pulse2Seq.reload = (pulse2Seq.reload & 0x00FF) | ((value & 0x07) << 8);
                 pulse2Seq.timer = pulse2Seq.reload;
+                pulse2Seq.sequence = pulse2Seq.newSequence;
                 pulse2LengthCtr.counter = lengthTable[(value & 0xF8) >> 3];
                 pulse2Envelope.start = true;
                 break;
@@ -311,39 +316,20 @@ public class APU {
             }
 
             pulse1Seq.clock(pulse1ChanEnabled);
-            pulse1Synth.freq = 1789773.0 / (16.0 * (double) ((pulse1Seq.reload + 1) & 0xFFFF));
-            pulse1Synth.amp = (pulse1Envelope.out + 1) / 16.0;
-            pulse1Intermediate = pulse1Synth.sample(globalTime);
-
-            if (pulse1LengthCtr.counter > 0 && pulse1Seq.timer >= 8 && !pulse1Sweep.mute && pulse1Envelope.out > 2) {
-                pulse1Sample += (pulse1Intermediate - pulse1Sample) * 0.5;
-            } else {
-                pulse1Sample = 0;
-            }
-
+            
             pulse2Seq.clock(pulse2ChanEnabled);
-            pulse2Synth.freq = 1789773.0 / (16.0 * (double) ((pulse2Seq.reload + 1) & 0xFFFF));
-            pulse2Synth.amp = (pulse2Envelope.out + 1) / 16.0;
-            pulse2Intermediate = pulse2Synth.sample(globalTime);
-
-            if (pulse2LengthCtr.counter > 0 && pulse2Seq.timer >= 8 && !pulse2Sweep.mute && pulse2Envelope.out > 2) {
-                pulse2Sample += (pulse2Intermediate - pulse2Sample) * 0.5;
-            } else {
-                pulse2Sample = 0;
-            }
 
             noiseSeq.clock(noiseChanEnabled);
             if (noiseLengthCtr.counter > 0 && noiseSeq.timer >= 8) {
-                noiseSample = (noiseSeq.output & 0xFF) * (noiseEnvelope.out) / 16.0;
+                noiseSample = (noiseSeq.output & 0x1) * (noiseEnvelope.out);
             }
 
             triangleSeq.clock(triangleChanEnabled);
             triangleSeq.clock(triangleChanEnabled);
-            triangleSynth.freq = 1789773.0 / (32.0 * (double) ((triangleSeq.reload + 1) & 0xFFFF));
-            triangleIntermediate = triangleSynth.sampleTriangle(globalTime);
+            triangleIntermediate = triangleSeq.triangleWave[(int) triangleSeq.sequence];
 
-            if (triangleLengthCtr.counter > 0 && triangleLinearCtr.timer > 0 && triangleSeq.timer >= 8) {
-                triangleSample += (triangleIntermediate - triangleSample) * 0.5;
+            if (triangleLengthCtr.counter > 0 && triangleLinearCtr.timer > 0) {
+                triangleSample = triangleIntermediate;
             } else {
                 triangleSample = 0;
             }
@@ -359,7 +345,31 @@ public class APU {
     }
 
     public short getSample() {
-        return (short) (0.5 * ((pulse1Sample) * 0.1 + (pulse2Sample) * 0.1 
-                                + 1.0 * (noiseSample) * 0.1 + triangleSample * 0.1) * Short.MAX_VALUE);
+        pulse1Sweep.track();
+        pulse2Sweep.track();
+
+        pulse1Synth.freq = 1789773.0 / (16.0 * (double) ((pulse1Seq.reload + 1) & 0xFFFF));
+        pulse1Synth.amp = (pulse1Envelope.out + 1) / 16.0;
+        if (pulse1LengthCtr.counter > 0 && pulse1Seq.timer >= 8 && !pulse1Sweep.mute &&
+            pulse1ChanEnabled && pulse1Envelope.out > 2) {
+            pulse1Sample = pulse1Synth.sample(globalTime);
+        } else {
+            pulse1Sample = 0;
+        }
+
+        pulse2Synth.freq = 1789773.0 / (16.0 * (double) ((pulse2Seq.reload + 1) & 0xFFFF));
+        pulse2Synth.amp = (pulse2Envelope.out + 1) / 16.0;
+        if (pulse2LengthCtr.counter > 0 && pulse2Seq.timer >= 8 && !pulse2Sweep.mute &&
+            pulse2ChanEnabled && pulse2Envelope.out > 2) {
+            pulse2Sample = pulse2Synth.sample(globalTime);
+        } else {
+            pulse2Sample = 0;
+        }
+
+        float pulseIntermediates = (float) (pulse1Sample - 0.8) + (float) (pulse2Sample - 0.8);
+        float otherIntermediates = 159.79f / (100.0f + 1.0f / ((float) noiseSample / 12241.0f + (float) triangleSample / 8227.0f));
+        float sample = 0.1f * pulseIntermediates + otherIntermediates;
+        sample = NESFilters.filter(sample) * 32767.0f;
+        return (short) sample;
     }
 }

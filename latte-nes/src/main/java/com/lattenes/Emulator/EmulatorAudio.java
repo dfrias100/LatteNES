@@ -31,11 +31,11 @@ public class EmulatorAudio {
     public EmulatorAudio(int sampleRate) {
         outVol = 1.0f;
         final int samplesPerFrame = (int) Math.ceil(sampleRate / 60.0988);
-        soundBuf = new byte[samplesPerFrame * 2 * 2];
+        soundBuf = new byte[2 * 8192];
         try {
             AudioFormat AF = new AudioFormat(sampleRate, 16, 1, true, false);
             line = AudioSystem.getSourceDataLine(AF);
-            line.open(AF, samplesPerFrame * 4 * 2);
+            line.open(AF, 2 * 8192);
             line.start();
         } catch (Exception e) {
             e.printStackTrace();
@@ -50,6 +50,11 @@ public class EmulatorAudio {
         } else {
             line.write(soundBuf, 0, bufPos);
         }
+        //if (line.available() >= bufPos) {
+        //    line.write(soundBuf, 0, bufPos);
+        //} else {
+        //    line.flush();
+        //}
         bufPos = 0;
     }
 

@@ -21,6 +21,7 @@ package com.lattenes.Core.APU;
 
 public abstract class Sequencer {
     long sequence = 0;
+    long newSequence = 0;
     int timer = 0;
     int reload = 0;
     byte output = 0;
@@ -31,7 +32,7 @@ public abstract class Sequencer {
             if (timer < 0) {
                 timer = reload + 1;
                 manipulateSequence();
-                output = (byte) (sequence & 0x1);
+                output = (byte) ((sequence & 0x80) >> 7);
             }
         }
         return output;
